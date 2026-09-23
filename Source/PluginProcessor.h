@@ -31,10 +31,9 @@ public:
         juce::MidiBuffer&
     ) override;
 
-    juce::AudioProcessorEditor* createEditor() override
-    {
-        return new juce::GenericAudioProcessorEditor(*this);
-    }
+    juce::AudioProcessorEditor* createEditor() override;
+    juce::AudioProcessorValueTreeState& parameters() { return state; }
+    bool exportPatternMidi(const juce::File& destination);
 
     bool hasEditor() const override
     {

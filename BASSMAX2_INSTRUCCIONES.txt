@@ -1,0 +1,10 @@
+BASSMAX 2 - Proyecto fuente, NO plugin compilado.
+
+1. Conserva el VST3 original como respaldo.
+2. Sube el contenido de esta carpeta al repositorio de GitHub (manteniendo .github/workflows).
+3. Actions -> nueva ejecucion -> Artifacts -> BassMax-Windows-VST3.
+4. Instala la nueva version tras cerrar Ableton y respaldar la anterior.
+5. En el plugin: RUN=1, Play. GENERATE cambia la semilla. EXPORT MIDI guarda el patron .mid.
+6. Arrastra el .mid a una pista MIDI con Serum 2 o Simpler y edita el clip en piano roll.
+
+LIMITES: BassMax 2 sigue siendo un instrumento, no un efecto MIDI. El MIDI exportado se puede editar en un clip; no escribe directamente en el clip de Ableton. La variante de efecto MIDI aun no esta incluida. Este codigo NO se ha compilado ni probado en Ableton desde este entorno.
