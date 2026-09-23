@@ -1,0 +1,17 @@
+CHISESCRAIST BASSMAX DRAG MIDI 1.4 - PROYECTO FUENTE
+
+Basado en BassMax Pattern 1.3 (version que el usuario confirmo que funciona).
+
+NUEVO: arrastra el boton DRAG MIDI desde la ventana del plugin a una pista MIDI
+vacia o a una zona de clip de Ableton. Se crea un archivo .mid temporal y se
+entrega a Windows mediante la API nativa de arrastrar archivos de JUCE.
+El archivo se genera al iniciar cada arrastre a partir del mismo patron que
+EXPORT MIDI. Los archivos temporales se conservan para no invalidar el arrastre.
+
+IMPORTANTE: no se ha probado en Ableton/Windows. El anfitrion puede bloquear
+arrastrar archivos desde una ventana VST3. Si no funciona, EXPORT MIDI sigue
+estando disponible. No se ha agregado envio MIDI en tiempo real a Serum.
+
+COMPILACION: subir el contenido de este ZIP a una rama nueva del repositorio;
+compilar en GitHub Actions; descargar el artifact VST3 de Windows. Conservar
+el VST3 1.3 funcional. No instalar dos variantes de prueba simultaneamente.

@@ -4,6 +4,29 @@
 #include <array>
 #include <memory>
 
+class BassMaxDragMidiButton final : public juce::TextButton
+{
+public:
+    BassMaxDragMidiButton() : juce::TextButton("DRAG MIDI  >>") {}
+    std::function<void()> onDragMidi;
+    void mouseDown(const juce::MouseEvent& e) override
+    {
+        startedDrag = false;
+        juce::TextButton::mouseDown(e);
+    }
+    void mouseDrag(const juce::MouseEvent& e) override
+    {
+        if (!startedDrag && e.getDistanceFromDragStart() > 7)
+        {
+            startedDrag = true;
+            if (onDragMidi) onDragMidi();
+        }
+        if (!startedDrag) juce::TextButton::mouseDrag(e);
+    }
+private:
+    bool startedDrag = false;
+};
+
 class BassMaxKnobEditor final : public juce::AudioProcessorEditor, private juce::Timer
 {
 public:
@@ -20,6 +43,9 @@ private:
     std::array<std::unique_ptr<Attachment>, 11> attachments;
     juce::TextButton generateButton { "GENERATE BASS" };
     juce::TextButton exportButton { "EXPORT MIDI" };
+    BassMaxDragMidiButton dragButton;
+    juce::Label dragStatus;
+    void startMidiDrag();
     juce::TextButton previewButton { "PREVIEW: ON" };
     juce::ComboBox stepsChoice;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> stepsAttachment;

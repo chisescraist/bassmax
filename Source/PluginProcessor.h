@@ -13,7 +13,7 @@ public:
 
     const juce::String getName() const override
     {
-        return "ChisesCraist BassMax Pattern 1.3";
+        return "ChisesCraist BassMax Drag MIDI 1.4";
     }
 
     void prepareToPlay(double sampleRate, int) override;

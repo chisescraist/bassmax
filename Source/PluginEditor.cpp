@@ -10,7 +10,7 @@ namespace
 BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(740, 660);
+    setSize(740, 710);
     startTimerHz(12);
     for (size_t i = 0; i < knobs.size(); ++i)
     {
@@ -37,6 +37,13 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     addAndMakeVisible(generateButton);
     addAndMakeVisible(exportButton);
     addAndMakeVisible(previewButton);
+    addAndMakeVisible(dragButton);
+    dragButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff287f72));
+    dragButton.onDragMidi = [this] { startMidiDrag(); };
+    dragStatus.setText("Arrastra DRAG MIDI hasta una pista MIDI de Ableton", juce::dontSendNotification);
+    dragStatus.setJustificationType(juce::Justification::centred);
+    dragStatus.setColour(juce::Label::textColourId, juce::Colour(0xffb5c8d3));
+    addAndMakeVisible(dragStatus);
     previewButton.onClick = [this]
     {
         processor.setPreviewEnabled(!processor.isPreviewEnabled());
@@ -118,7 +125,7 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     }
     g.setColour(juce::Colour(0xffb5c8d3));
     g.setFont(juce::Font(juce::FontOptions(11.0f)));
-    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.steps) + " STEPS  ·  EDITABLE EN ABLETON DESPUES DE EXPORTAR", 26, 576, 690, 20, juce::Justification::centredLeft);
+    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.steps) + " STEPS  ·  ARRASTRA EL MIDI A ABLETON", 26, 576, 690, 20, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
@@ -138,4 +145,29 @@ void BassMaxKnobEditor::resized()
     generateButton.setBounds(24, 607, 270, 42);
     exportButton.setBounds(305, 607, 270, 42);
     previewButton.setBounds(585, 607, 130, 42);
+    dragButton.setBounds(24, 657, 270, 42);
+    dragStatus.setBounds(305, 657, 410, 42);
+}
+
+void BassMaxKnobEditor::startMidiDrag()
+{
+    // A unique file for each drag avoids overwriting a clip while the host imports it.
+    const auto tempDir = juce::File::getSpecialLocation(juce::File::tempDirectory)
+        .getChildFile("ChisesCraist_BassMax_MIDI_Drag");
+    if (!tempDir.createDirectory())
+    {
+        dragStatus.setText("Error: no se pudo crear la carpeta temporal", juce::dontSendNotification);
+        return;
+    }
+    const auto tempFile = tempDir.getNonexistentChildFile("BassMax_" + juce::String(juce::Time::getCurrentTime().toMilliseconds()), ".mid", false);
+    if (!processor.exportMidi(tempFile))
+    {
+        dragStatus.setText("Error: no se pudo generar el archivo MIDI", juce::dontSendNotification);
+        return;
+    }
+    dragStatus.setText("Solta el MIDI en una pista MIDI de Ableton", juce::dontSendNotification);
+    // Native OS file drag. Whether the host accepts the drop from a plugin window
+    // depends on its VST3 hosting and Windows drag/drop support.
+    juce::DragAndDropContainer::performExternalDragDropOfFiles(
+        juce::StringArray { tempFile.getFullPathName() }, false, this);
 }
