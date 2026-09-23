@@ -6,14 +6,15 @@ constexpr juce::uint32 bg = 0xff111923, panel = 0xff1c2935, accent = 0xff65e6c5;
 BassMaxEditor::BassMaxEditor(TechHouseBassLab& p) : AudioProcessorEditor(p), processor(p)
 {
     setSize(780, 520);
-    heading.setText("BASSMAX 2", juce::dontSendNotification);
-    heading.setFont(juce::Font(juce::FontOptions(32.0f, juce::Font::bold)));
+    heading.setText("CHISESCRAIST  |  BASSMAX 2.1", juce::dontSendNotification);
+    heading.setFont(juce::Font(juce::FontOptions(25.0f, juce::Font::bold)));
     heading.setColour(juce::Label::textColourId, juce::Colour(accent)); addAndMakeVisible(heading);
     subheading.setText("TECH HOUSE  /  BASS + MIDI LAB", juce::dontSendNotification);
     subheading.setColour(juce::Label::textColourId, juce::Colours::lightgrey); addAndMakeVisible(subheading);
     status.setText("Exporta un .mid y arrastralo al piano roll de Ableton", juce::dontSendNotification);
     status.setColour(juce::Label::textColourId, juce::Colours::lightgrey); addAndMakeVisible(status);
     auto& params = processor.parameters();
+    // Keep the APVTS attachments alive until after their controls are destroyed.
     const char* ids[] = { "root", "density", "swing", "length", "variation", "gain", "tone" };
     const char* names[] = { "ROOT", "DENSITY", "SWING", "GATE", "VARIATION", "GAIN", "TONE" };
     for (int i = 0; i < 7; ++i)
@@ -37,13 +38,13 @@ BassMaxEditor::BassMaxEditor(TechHouseBassLab& p) : AudioProcessorEditor(p), pro
     }
     groove.addItem("ROLLING", 1); groove.addItem("OFFBEAT", 2);
     groove.addItem("SYNCOPATED", 3); groove.addItem("MINIMAL", 4);
-    grooveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(params, "groove", groove);
     addAndMakeVisible(groove);
+    grooveAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(params, "groove", groove);
     steps.addItem("16 STEPS", 1); steps.addItem("32 STEPS", 2);
-    stepsAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(params, "steps", steps);
     addAndMakeVisible(steps);
-    runAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(params, "run", run);
+    stepsAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(params, "steps", steps);
     addAndMakeVisible(run);
+    runAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(params, "run", run);
     for (auto* b : { &exportButton, &generateButton }) {
         b->setColour(juce::TextButton::buttonColourId, juce::Colour(accent));
         b->setColour(juce::TextButton::textColourOffId, juce::Colour(bg));
@@ -68,6 +69,15 @@ BassMaxEditor::BassMaxEditor(TechHouseBassLab& p) : AudioProcessorEditor(p), pro
             });
     };
 }
+BassMaxEditor::~BassMaxEditor()
+{
+    // Explicitly detach listeners before destroying the widgets they observe.
+    chooser.reset();
+    runAttachment.reset();
+    stepsAttachment.reset();
+    grooveAttachment.reset();
+    attachments.clear();
+}
 void BassMaxEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(bg));
@@ -78,7 +88,7 @@ void BassMaxEditor::paint(juce::Graphics& g)
 }
 void BassMaxEditor::resized()
 {
-    heading.setBounds(25, 13, 350, 43); subheading.setBounds(27, 53, 460, 23);
+    heading.setBounds(25, 13, 540, 43); subheading.setBounds(27, 53, 460, 23);
     run.setBounds(665, 24, 85, 35);
     groove.setBounds(36, 108, 245, 34); steps.setBounds(294, 108, 150, 34);
     for (int i = 0; i < 7; ++i) {

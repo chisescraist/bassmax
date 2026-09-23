@@ -1,0 +1,12 @@
+CHISESCRAIST BASSMAX 2.1 - COMPILACION DE DIAGNOSTICO
+
+Esta compilacion es una revision de estabilidad, NO una solucion confirmada del cierre de Ableton.
+Se preserva el motor y la interfaz de BassMax 2. Se explicita la desconexion de los attachments del editor antes de destruir los controles, y se corrige la inicializacion del patron para que los controles tengan efecto al abrir.
+
+1. Conservar el VST3 original funcional en una carpeta aparte.
+2. NO reemplazar BassMax 1. Instalar el VST3 compilado de esta revision en una carpeta de prueba sin duplicados de la misma ID de plugin.
+3. Abrir Live con proyecto vacio e insertar BassMax. Si vuelve a fallar, retirar el VST3 de prueba.
+4. Si abre, probar RUN, GENERATE y EXPORT MIDI, en ese orden.
+5. Esta version no incorpora aun categorias de estilos: primero hay que validar que Live no se cierre.
+
+No se ha compilado en Windows ni probado dentro de Ableton desde este entorno.

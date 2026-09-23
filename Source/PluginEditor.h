@@ -8,6 +8,7 @@ class BassMaxEditor final : public juce::AudioProcessorEditor
 {
 public:
     explicit BassMaxEditor(TechHouseBassLab&);
+    ~BassMaxEditor() override;
     void paint(juce::Graphics&) override;
     void resized() override;
 private:
