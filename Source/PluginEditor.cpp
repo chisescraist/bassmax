@@ -2,15 +2,15 @@
 
 namespace
 {
-    constexpr const char* ids[] = { "run", "groove", "root", "density", "swing", "length", "seed", "bars", "variation", "gain", "tone", "bpm" };
-    constexpr const char* names[] = { "RUN", "GROOVE", "ROOT", "DENSITY", "SWING", "GATE", "SEED", "BARS", "VARIATION", "GAIN", "TONE", "BPM" };
-    static_assert(std::size(ids) == 12);
+    constexpr const char* ids[] = { "run", "groove", "root", "density", "swing", "length", "seed", "bars", "variation", "gain", "tone", "bpm", "attack", "release", "cutoff", "resonance", "drive", "sub", "reverb" };
+    constexpr const char* names[] = { "RUN", "GROOVE", "ROOT", "DENSITY", "SWING", "GATE", "SEED", "BARS", "VARIATION", "GAIN", "TONE", "BPM", "ATTACK", "RELEASE", "CUTOFF", "RESONANCE", "DRIVE", "SUB", "REVERB" };
+    static_assert(std::size(ids) == 19);
 }
 
 BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(740, 820);
+    setSize(740, 1070);
     startTimerHz(12);
     for (size_t i = 0; i < knobs.size(); ++i)
     {
@@ -97,7 +97,7 @@ void BassMaxKnobEditor::timerCallback()
             pageChoice.addItem("BAR " + juce::String(bar) + " / " + juce::String(bars), bar);
         pageChoice.setSelectedId(juce::jlimit(1, bars, oldSelection), juce::dontSendNotification);
     }
-    repaint(juce::Rectangle<int>(22, 405, getWidth()-44, 205));
+    repaint(juce::Rectangle<int>(22, 660, getWidth()-44, 205));
 }
 
 void BassMaxKnobEditor::paint(juce::Graphics& g)
@@ -114,7 +114,7 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     g.drawText("PATRON MIDI · VISTA PREVIA · MIDI OUT (DEPENDIENTE DEL HOST)", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
 
     const auto pattern = processor.getPatternSnapshot();
-    const auto plot = juce::Rectangle<float>(26.0f, 415.0f, 688.0f, 150.0f);
+    const auto plot = juce::Rectangle<float>(26.0f, 665.0f, 688.0f, 150.0f);
     g.setColour(juce::Colour(0xff202c38));
     g.fillRoundedRectangle(plot, 7.0f);
     const int low = 24, high = 72;
@@ -145,7 +145,7 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     }
     g.setColour(juce::Colour(0xffb5c8d3));
     g.setFont(juce::Font(juce::FontOptions(11.0f)));
-    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.bars) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 576, 690, 20, juce::Justification::centredLeft);
+    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.bars) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 826, 690, 20, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
@@ -162,14 +162,14 @@ void BassMaxKnobEditor::resized()
         captions[i].setBounds(x, y+105, cellW-8, 24);
     }
     barsChoice.setBounds(22 + 7 % columns * cellW, 110 + 7 / columns * cellH + 35, cellW - 8, 34);
-    pageChoice.setBounds(24, 602, 180, 28);
-    generateButton.setBounds(24, 632, 270, 42);
-    exportButton.setBounds(305, 632, 270, 42);
-    previewButton.setBounds(585, 632, 130, 42);
-    dragButton.setBounds(24, 682, 270, 42);
-    dragStatus.setBounds(305, 682, 410, 42);
-    undoButton.setBounds(24, 737, 270, 42);
-    redoButton.setBounds(305, 737, 270, 42);
+    pageChoice.setBounds(24, 852, 180, 28);
+    generateButton.setBounds(24, 882, 270, 42);
+    exportButton.setBounds(305, 882, 270, 42);
+    previewButton.setBounds(585, 882, 130, 42);
+    dragButton.setBounds(24, 932, 270, 42);
+    dragStatus.setBounds(305, 932, 410, 42);
+    undoButton.setBounds(24, 987, 270, 42);
+    redoButton.setBounds(305, 987, 270, 42);
 }
 
 void BassMaxKnobEditor::startMidiDrag()

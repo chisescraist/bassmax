@@ -38,9 +38,9 @@ private:
     void timerCallback() override;
     TechHouseBassLab& processor;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-    std::array<juce::Slider, 12> knobs;
-    std::array<juce::Label, 12> captions;
-    std::array<std::unique_ptr<Attachment>, 12> attachments;
+    std::array<juce::Slider, 19> knobs;
+    std::array<juce::Label, 19> captions;
+    std::array<std::unique_ptr<Attachment>, 19> attachments;
     juce::TextButton generateButton { "GENERATE BASS" };
     juce::TextButton exportButton { "EXPORT MIDI" };
     juce::TextButton undoButton { "UNDO GENERATE" };

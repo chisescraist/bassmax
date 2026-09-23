@@ -45,6 +45,13 @@ TechHouseBassLab::makeParams()
     f("variation", "Pitch variation percent", 0, 100, 35);
     f("gain", "Internal bass gain (0 = silent preview)", 0, 1, 0.22f, 0.01f);
     f("tone", "Internal bass tone", 0, 1, 0.35f, 0.01f);
+    f("attack", "Bass attack ms", 1, 120, 4, 1);
+    f("release", "Bass release ms", 20, 900, 130, 1);
+    f("cutoff", "Bass filter cutoff Hz", 70, 5000, 650, 1);
+    f("resonance", "Bass filter resonance", 0, 0.9f, 0.18f, 0.01f);
+    f("drive", "Bass saturation", 0, 1, 0.32f, 0.01f);
+    f("sub", "Bass sub oscillator", 0, 1, 0.48f, 0.01f);
+    f("reverb", "Bass reverb mix", 0, 0.5f, 0.06f, 0.01f);
 
     return { p.begin(), p.end() };
 }
@@ -69,6 +76,10 @@ void TechHouseBassLab::prepareToPlay(double sampleRate, int)
     activeNote = -1;
     activeStep = -1;
     lastPpq = -1.0;
+    filterLow = filterBand = 0.0;
+    synthEnvelope = 0.0;
+    reverb.reset();
+    reverb.setSampleRate(sr);
     previousSeed = -1;
     previousGroove = previousRoot = previousDensity = previousVariation = -1;
 }
@@ -223,7 +234,9 @@ void TechHouseBassLab::processBlock(
         activeStep = -1;
         lastPpq = -1.0;
 
-        midi.swapWith(out);
+        if (audio.getNumChannels() >= 2)
+        reverb.processStereo(audio.getWritePointer(0), audio.getWritePointer(1), n);
+    midi.swapWith(out);
         env = 0.0;
 
         return;
@@ -251,8 +264,21 @@ void TechHouseBassLab::processBlock(
     // Audible internal preview remains available until external routing is verified.
     const double gain = previewEnabled.load() ? state.getRawParameterValue("gain")->load() : 0.0;
 
-    const double tone =
-        state.getRawParameterValue("tone")->load();
+    const double tone = state.getRawParameterValue("tone")->load();
+    const double attack = state.getRawParameterValue("attack")->load() * 0.001;
+    const double release = state.getRawParameterValue("release")->load() * 0.001;
+    const double cutoff = state.getRawParameterValue("cutoff")->load();
+    const double resonance = state.getRawParameterValue("resonance")->load();
+    const double drive = state.getRawParameterValue("drive")->load();
+    const double sub = state.getRawParameterValue("sub")->load();
+    const float reverbMix = state.getRawParameterValue("reverb")->load();
+    juce::Reverb::Parameters rv;
+    rv.roomSize = 0.36f; rv.damping = 0.65f; rv.wetLevel = reverbMix;
+    rv.dryLevel = 1.0f - reverbMix; rv.width = 0.8f;
+    reverb.setParameters(rv);
+    const double attackCoeff = std::exp(-1.0 / (sr * attack));
+    const double releaseCoeff = std::exp(-1.0 / (sr * release));
+    const double filterF = juce::jlimit(0.001, 0.85, 2.0 * std::sin(pi * juce::jmin(cutoff, sr * 0.18) / sr));
 
     for (int i = 0; i < n; ++i)
     {
@@ -341,7 +367,10 @@ void TechHouseBassLab::processBlock(
 
         phase -= std::floor(phase);
 
-        env *= std::exp(-1.0 / (sr * 0.11));
+        const bool keyDown = activeNote >= 0;
+        synthEnvelope = keyDown ? 1.0 - (1.0 - synthEnvelope) * attackCoeff
+                                : synthEnvelope * releaseCoeff;
+        env = synthEnvelope;
 
         const double saw =
             2.0 * phase - 1.0;
@@ -349,12 +378,15 @@ void TechHouseBassLab::processBlock(
         const double sine =
             std::sin(2.0 * pi * phase);
 
-        const float sample =
-            static_cast<float>(
-                (sine * (1.0 - tone) + saw * tone)
-                * env
-                * gain
-            );
+        const double oscillator = (sine * (1.0 - tone) + saw * tone) * (1.0 - 0.28 * sub)
+                                + std::sin(pi * phase) * 0.28 * sub;
+        const double saturated = std::tanh(oscillator * (1.0 + 5.0 * drive)) / (1.0 + drive);
+        filterLow += filterF * filterBand;
+        const double high = saturated - filterLow - (0.25 + 1.6 * (1.0 - resonance)) * filterBand;
+        filterBand += filterF * high;
+        filterLow = juce::jlimit(-2.0, 2.0, filterLow);
+        filterBand = juce::jlimit(-2.0, 2.0, filterBand);
+        const float sample = static_cast<float>(filterLow * env * gain * 0.65);
 
         for (int ch = 0; ch < audio.getNumChannels(); ++ch)
         {
@@ -362,6 +394,8 @@ void TechHouseBassLab::processBlock(
         }
     }
 
+    if (audio.getNumChannels() >= 2)
+        reverb.processStereo(audio.getWritePointer(0), audio.getWritePointer(1), n);
     midi.swapWith(out);
 }
 

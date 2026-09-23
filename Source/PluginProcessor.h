@@ -5,6 +5,7 @@
 #include <juce_gui_extra/juce_gui_extra.h>
 
 #include <array>
+#include <juce_audio_basics/juce_audio_basics.h>
 
 class TechHouseBassLab final : public juce::AudioProcessor
 {
@@ -13,7 +14,7 @@ public:
 
     const juce::String getName() const override
     {
-        return "ChisesCraist BassMax Bars BPM 1.5";
+        return "ChisesCraist BassMax 1.7";
     }
 
     void prepareToPlay(double sampleRate, int) override;
@@ -62,7 +63,7 @@ public:
 
     double getTailLengthSeconds() const override
     {
-        return 0.2;
+        return 1.5;
     }
 
     bool acceptsMidi() const override
@@ -112,6 +113,8 @@ private:
     double sr = 44100.0;
     double phase = 0.0;
     double env = 0.0;
+    double synthEnvelope = 0.0, filterLow = 0.0, filterBand = 0.0;
+    juce::Reverb reverb;
     double lastPpq = -1.0;
 
     int activeNote = -1;

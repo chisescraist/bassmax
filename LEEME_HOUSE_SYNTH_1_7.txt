@@ -1,0 +1,1 @@
+BassMax 1.7: sintesis interna house con ATTACK, RELEASE, CUTOFF, RESONANCE, DRIVE, SUB y REVERB. Conserva MIDI drag/export, 4/8/16 compases y UNDO/REDO. Fuente JUCE para compilar en GitHub Actions. No probado en Ableton ni compilado en Windows. Guardar copia del VST3 1.6.
