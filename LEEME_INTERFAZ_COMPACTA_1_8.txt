@@ -1,0 +1,1 @@
+BassMax 1.8: interfaz compacta 740 x 790, perillas y espacios reducidos. Motor de audio, MIDI, undo/redo y drag sin modificaciones. Proyecto fuente, requiere compilacion Windows.

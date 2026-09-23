@@ -10,14 +10,14 @@ namespace
 BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(740, 1070);
+    setSize(740, 790);
     startTimerHz(12);
     for (size_t i = 0; i < knobs.size(); ++i)
     {
         if (i == 7) continue; // BARS uses a 4/8/16 selector. 
         auto& slider = knobs[i];
         slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
-        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 65, 19);
+        slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 54, 16);
         slider.setColour(juce::Slider::rotarySliderFillColourId, juce::Colour(0xff55dbc2));
         slider.setColour(juce::Slider::rotarySliderOutlineColourId, juce::Colour(0xff3b4755));
         slider.setColour(juce::Slider::thumbColourId, juce::Colours::white);
@@ -97,7 +97,7 @@ void BassMaxKnobEditor::timerCallback()
             pageChoice.addItem("BAR " + juce::String(bar) + " / " + juce::String(bars), bar);
         pageChoice.setSelectedId(juce::jlimit(1, bars, oldSelection), juce::dontSendNotification);
     }
-    repaint(juce::Rectangle<int>(22, 660, getWidth()-44, 205));
+    repaint(juce::Rectangle<int>(22, 485, getWidth()-44, 155));
 }
 
 void BassMaxKnobEditor::paint(juce::Graphics& g)
@@ -114,7 +114,7 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     g.drawText("PATRON MIDI · VISTA PREVIA · MIDI OUT (DEPENDIENTE DEL HOST)", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
 
     const auto pattern = processor.getPatternSnapshot();
-    const auto plot = juce::Rectangle<float>(26.0f, 665.0f, 688.0f, 150.0f);
+    const auto plot = juce::Rectangle<float>(26.0f, 488.0f, 688.0f, 112.0f);
     g.setColour(juce::Colour(0xff202c38));
     g.fillRoundedRectangle(plot, 7.0f);
     const int low = 24, high = 72;
@@ -145,31 +145,32 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     }
     g.setColour(juce::Colour(0xffb5c8d3));
     g.setFont(juce::Font(juce::FontOptions(11.0f)));
-    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.bars) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 826, 690, 20, juce::Justification::centredLeft);
+    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.bars) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 608, 690, 18, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
 {
+    // Compact four-row layout: every control and action fits within 740 x 790.
     constexpr int columns = 6;
     constexpr int cellW = 116;
-    constexpr int cellH = 137;
+    constexpr int cellH = 94;
     for (size_t i = 0; i < knobs.size(); ++i)
     {
         if (i == 7) continue;
         const int x = 22 + static_cast<int>(i % columns) * cellW;
-        const int y = 110 + static_cast<int>(i / columns) * cellH;
-        knobs[i].setBounds(x, y, cellW-8, 105);
-        captions[i].setBounds(x, y+105, cellW-8, 24);
+        const int y = 96 + static_cast<int>(i / columns) * cellH;
+        knobs[i].setBounds(x + 10, y, cellW - 28, 69);
+        captions[i].setBounds(x, y + 68, cellW - 8, 19);
     }
-    barsChoice.setBounds(22 + 7 % columns * cellW, 110 + 7 / columns * cellH + 35, cellW - 8, 34);
-    pageChoice.setBounds(24, 852, 180, 28);
-    generateButton.setBounds(24, 882, 270, 42);
-    exportButton.setBounds(305, 882, 270, 42);
-    previewButton.setBounds(585, 882, 130, 42);
-    dragButton.setBounds(24, 932, 270, 42);
-    dragStatus.setBounds(305, 932, 410, 42);
-    undoButton.setBounds(24, 987, 270, 42);
-    redoButton.setBounds(305, 987, 270, 42);
+    barsChoice.setBounds(22 + 7 % columns * cellW, 96 + 7 / columns * cellH + 19, cellW - 8, 28);
+    pageChoice.setBounds(24, 631, 180, 26);
+    generateButton.setBounds(24, 663, 270, 34);
+    exportButton.setBounds(305, 663, 270, 34);
+    previewButton.setBounds(585, 663, 130, 34);
+    dragButton.setBounds(24, 705, 270, 34);
+    dragStatus.setBounds(305, 705, 410, 34);
+    undoButton.setBounds(24, 747, 270, 34);
+    redoButton.setBounds(305, 747, 270, 34);
 }
 
 void BassMaxKnobEditor::startMidiDrag()
