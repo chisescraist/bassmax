@@ -1,0 +1,1 @@
+BassMax 1.6: UNDO GENERATE restaura el patron MIDI y los 12 parametros previos al ultimo GENERATE. REDO recupera el patron deshecho. El historial guarda una sola generacion anterior. DRAG MIDI y EXPORT MIDI usan el patron restaurado. Conserva el VST3 1.5 hasta probar la compilacion.

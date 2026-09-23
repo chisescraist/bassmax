@@ -35,6 +35,10 @@ public:
 
     juce::AudioProcessorValueTreeState& getParameters() noexcept { return state; }
     void generateNewPattern();
+    bool undoGenerate();
+    bool redoGenerate();
+    bool canUndoGenerate() const noexcept { return undoAvailable.load(); }
+    bool canRedoGenerate() const noexcept { return redoAvailable.load(); }
     bool exportMidi(const juce::File& file);
     struct PatternSnapshot
     {
@@ -115,6 +119,11 @@ private:
     int previousSeed = -1;
     int previousGroove = -1, previousRoot = -1, previousDensity = -1, previousVariation = -1;
     juce::CriticalSection patternLock;
+    struct HistoryEntry { std::array<float, 12> params{}; PatternSnapshot pattern; };
+    HistoryEntry undoEntry, redoEntry;
+    std::atomic<bool> undoAvailable { false }, redoAvailable { false };
+    HistoryEntry captureHistory();
+    void restoreHistory(const HistoryEntry&);
     std::atomic<bool> previewEnabled { true };
 public:
     void setPreviewEnabled(bool enabled) noexcept { previewEnabled.store(enabled); }

@@ -43,6 +43,8 @@ private:
     std::array<std::unique_ptr<Attachment>, 12> attachments;
     juce::TextButton generateButton { "GENERATE BASS" };
     juce::TextButton exportButton { "EXPORT MIDI" };
+    juce::TextButton undoButton { "UNDO GENERATE" };
+    juce::TextButton redoButton { "REDO" };
     BassMaxDragMidiButton dragButton;
     juce::Label dragStatus;
     void startMidiDrag();

@@ -388,19 +388,79 @@ void TechHouseBassLab::setStateInformation(
     }
 
     previousSeed = -1;
+    undoAvailable.store(false);
+    redoAvailable.store(false);
 }
 
+
+namespace { constexpr const char* historyIds[] = { "run", "groove", "root", "density", "swing", "length", "seed", "bars", "variation", "gain", "tone", "bpm" }; }
+
+TechHouseBassLab::HistoryEntry TechHouseBassLab::captureHistory()
+{
+    HistoryEntry entry;
+    entry.pattern = getPatternSnapshot();
+    for (size_t i = 0; i < entry.params.size(); ++i)
+        entry.params[i] = state.getRawParameterValue(historyIds[i])->load();
+    return entry;
+}
+
+void TechHouseBassLab::restoreHistory(const HistoryEntry& entry)
+{
+    for (size_t i = 0; i < entry.params.size(); ++i)
+        if (auto* param = state.getParameter(historyIds[i]))
+        {
+            param->beginChangeGesture();
+            param->setValueNotifyingHost(param->convertTo0to1(entry.params[i]));
+            param->endChangeGesture();
+        }
+    {
+        const juce::ScopedLock lock(patternLock);
+        pitches = entry.pattern.notes;
+        gates = entry.pattern.gates;
+        velocities = entry.pattern.velocities;
+        previousSeed = static_cast<int>(entry.params[6]);
+        previousGroove = static_cast<int>(entry.params[1]);
+        previousRoot = static_cast<int>(entry.params[2]);
+        previousDensity = static_cast<int>(entry.params[3]);
+        previousVariation = static_cast<int>(entry.params[8]);
+    }
+}
 
 void TechHouseBassLab::generateNewPattern()
 {
     auto* parameter = state.getParameter("seed");
     if (parameter == nullptr) return;
+    undoEntry = captureHistory();
+    undoAvailable.store(true);
+    redoAvailable.store(false);
     const int oldSeed = getPatternSeed();
     int nextSeed = juce::Random::getSystemRandom().nextInt(10000);
     if (nextSeed == oldSeed) nextSeed = (oldSeed + 1) % 10000;
     parameter->beginChangeGesture();
     parameter->setValueNotifyingHost(parameter->convertTo0to1(static_cast<float>(nextSeed)));
     parameter->endChangeGesture();
+    // Make the new notes immediately available to the piano roll and drag/export.
+    getPatternSnapshot();
+}
+
+bool TechHouseBassLab::undoGenerate()
+{
+    if (!undoAvailable.load()) return false;
+    redoEntry = captureHistory();
+    restoreHistory(undoEntry);
+    undoAvailable.store(false);
+    redoAvailable.store(true);
+    return true;
+}
+
+bool TechHouseBassLab::redoGenerate()
+{
+    if (!redoAvailable.load()) return false;
+    undoEntry = captureHistory();
+    restoreHistory(redoEntry);
+    redoAvailable.store(false);
+    undoAvailable.store(true);
+    return true;
 }
 
 bool TechHouseBassLab::exportMidi(const juce::File& file)

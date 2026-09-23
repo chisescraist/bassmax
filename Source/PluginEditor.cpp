@@ -10,7 +10,7 @@ namespace
 BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(740, 770);
+    setSize(740, 820);
     startTimerHz(12);
     for (size_t i = 0; i < knobs.size(); ++i)
     {
@@ -39,6 +39,10 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     pageChoice.onChange = [this] { repaint(); };
     addAndMakeVisible(generateButton);
     addAndMakeVisible(exportButton);
+    addAndMakeVisible(undoButton);
+    addAndMakeVisible(redoButton);
+    undoButton.onClick = [this] { processor.undoGenerate(); repaint(); };
+    redoButton.onClick = [this] { processor.redoGenerate(); repaint(); };
     addAndMakeVisible(previewButton);
     addAndMakeVisible(dragButton);
     dragButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xff287f72));
@@ -82,6 +86,8 @@ BassMaxKnobEditor::~BassMaxKnobEditor()
 
 void BassMaxKnobEditor::timerCallback()
 {
+    undoButton.setEnabled(processor.canUndoGenerate());
+    redoButton.setEnabled(processor.canRedoGenerate());
     const auto bars = processor.getPatternSnapshot().bars;
     const int oldSelection = pageChoice.getSelectedId();
     if (pageChoice.getNumItems() != bars)
@@ -162,6 +168,8 @@ void BassMaxKnobEditor::resized()
     previewButton.setBounds(585, 632, 130, 42);
     dragButton.setBounds(24, 682, 270, 42);
     dragStatus.setBounds(305, 682, 410, 42);
+    undoButton.setBounds(24, 737, 270, 42);
+    redoButton.setBounds(305, 737, 270, 42);
 }
 
 void BassMaxKnobEditor::startMidiDrag()
