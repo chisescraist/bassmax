@@ -1,0 +1,13 @@
+CHISESCRAIST BASSMAX MIDI OUT 1.2 - PRUEBA EXPERIMENTAL
+
+Esta compilacion conserva el motor, las perillas, GENERATE y EXPORT MIDI.
+Emite notas MIDI en tiempo real y no produce audio interno.
+
+1. Subi el CONTENIDO de este ZIP a una rama nueva de GitHub. Ejecuta Actions en esa rama (workflow_dispatch).
+2. Guarda la version estable anterior antes de instalar esta. Retira otras versiones de prueba del escaneo de Live.
+3. En Live crea pista MIDI 1 y coloca BassMax MIDI OUT 1.2. Activa RUN y reproduce el transporte.
+4. Crea pista MIDI 2 con Serum 2 o Simpler. En MIDI From de pista 2, selecciona pista 1 y, si Live ofrece un origen post-FX o BassMax, elegilo. Monitor en IN, o arma pista 2 y monitor AUTO.
+5. Si Live NO ofrece la salida MIDI de BassMax en MIDI From, la limitacion es del soporte de salida VST3 en Live. No es un error de Serum: utiliza EXPORT MIDI para llevar el patron a la pista 2. No prometemos que Live exponga MIDI OUT de un instrumento VST3.
+6. Si hay silencio, verifica que RUN=1, transporte PLAY y que el patch de Serum/Simpler responde a notas MIDI entre C1 y C4.
+
+La salida en tiempo real requiere comprobacion en tu version de Ableton. Este proyecto fuente NO esta compilado ni probado en Live desde este entorno.

@@ -234,8 +234,8 @@ void TechHouseBassLab::processBlock(
             state.getRawParameterValue("steps")->load()
         );
 
-    const double gain =
-        state.getRawParameterValue("gain")->load();
+    // MIDI-only preview: external Serum/Simpler generates the sound.
+    const double gain = 0.0;
 
     const double tone =
         state.getRawParameterValue("tone")->load();

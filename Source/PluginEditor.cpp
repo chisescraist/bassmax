@@ -66,7 +66,7 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     g.drawText("BASSMAX", 24, 38, getWidth()-48, 40, juce::Justification::centredLeft);
     g.setColour(juce::Colour(0xff9cabb8));
     g.setFont(juce::Font(juce::FontOptions(12.0f)));
-    g.drawText("GENERATE CREA UN PATRON NUEVO  |  EXPORT MIDI PARA SERUM / SIMPLER", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
+    g.drawText("MIDI OUT EN TIEMPO REAL: RUTEAR A SERUM / SIMPLER EN OTRA PISTA", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
