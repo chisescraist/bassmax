@@ -10,7 +10,8 @@ namespace
 BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(740, 480);
+    setSize(740, 660);
+    startTimerHz(12);
     for (size_t i = 0; i < knobs.size(); ++i)
     {
         if (i == 7) continue; // STEPS uses a 16/32 selector. 
@@ -35,6 +36,12 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     stepsAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(processor.getParameters(), "steps", stepsChoice);
     addAndMakeVisible(generateButton);
     addAndMakeVisible(exportButton);
+    addAndMakeVisible(previewButton);
+    previewButton.onClick = [this]
+    {
+        processor.setPreviewEnabled(!processor.isPreviewEnabled());
+        previewButton.setButtonText(processor.isPreviewEnabled() ? "PREVIEW: ON" : "PREVIEW: OFF");
+    };
     generateButton.onClick = [this] { processor.generateNewPattern(); };
     exportButton.onClick = [this]
     {
@@ -55,6 +62,19 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     };
 }
 
+BassMaxKnobEditor::~BassMaxKnobEditor()
+{
+    stopTimer();
+    exportChooser.reset();
+    stepsAttachment.reset();
+    for (auto& attachment : attachments) attachment.reset();
+}
+
+void BassMaxKnobEditor::timerCallback()
+{
+    repaint(juce::Rectangle<int>(22, 405, getWidth()-44, 170));
+}
+
 void BassMaxKnobEditor::paint(juce::Graphics& g)
 {
     g.fillAll(juce::Colour(0xff151d28));
@@ -66,7 +86,39 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     g.drawText("BASSMAX", 24, 38, getWidth()-48, 40, juce::Justification::centredLeft);
     g.setColour(juce::Colour(0xff9cabb8));
     g.setFont(juce::Font(juce::FontOptions(12.0f)));
-    g.drawText("MIDI OUT EN TIEMPO REAL: RUTEAR A SERUM / SIMPLER EN OTRA PISTA", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
+    g.drawText("PATRON MIDI · VISTA PREVIA · MIDI OUT (DEPENDIENTE DEL HOST)", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
+
+    const auto pattern = processor.getPatternSnapshot();
+    const auto plot = juce::Rectangle<float>(26.0f, 415.0f, 688.0f, 150.0f);
+    g.setColour(juce::Colour(0xff202c38));
+    g.fillRoundedRectangle(plot, 7.0f);
+    const int low = 24, high = 72;
+    for (int n = low; n <= high; n += 12)
+    {
+        const float y = plot.getBottom() - (n - low) * plot.getHeight() / (high-low);
+        g.setColour(juce::Colour(0xff344351));
+        g.drawHorizontalLine(static_cast<int>(y), plot.getX(), plot.getRight());
+    }
+    for (int i = 0; i <= pattern.steps; ++i)
+    {
+        const float x = plot.getX() + plot.getWidth() * i / pattern.steps;
+        g.setColour(juce::Colour(i % 4 == 0 ? 0xff5b6d7d : 0xff344351));
+        g.drawVerticalLine(static_cast<int>(x), plot.getY(), plot.getBottom());
+    }
+    for (int i = 0; i < pattern.steps; ++i)
+    {
+        if (!pattern.gates[static_cast<size_t>(i)]) continue;
+        const float stepWidth = plot.getWidth() / pattern.steps;
+        const float start = plot.getX() + (i + (i % 2 ? pattern.swing : 0.0)) * stepWidth;
+        const float width = juce::jmax(2.0f, static_cast<float>(pattern.gateLength * stepWidth) - 1.0f);
+        const int note = juce::jlimit(low, high, pattern.notes[static_cast<size_t>(i)]);
+        const float y = plot.getBottom() - (note - low + 0.5f) * plot.getHeight() / (high-low);
+        g.setColour(juce::Colour(0xff55dbc2));
+        g.fillRoundedRectangle(start, y - 4.0f, width, 8.0f, 2.0f);
+    }
+    g.setColour(juce::Colour(0xffb5c8d3));
+    g.setFont(juce::Font(juce::FontOptions(11.0f)));
+    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.steps) + " STEPS  ·  EDITABLE EN ABLETON DESPUES DE EXPORTAR", 26, 576, 690, 20, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
@@ -83,6 +135,7 @@ void BassMaxKnobEditor::resized()
         captions[i].setBounds(x, y+105, cellW-8, 24);
     }
     stepsChoice.setBounds(22 + 7 % columns * cellW, 110 + 7 / columns * cellH + 35, cellW - 8, 34);
-    generateButton.setBounds(24, 402, 330, 48);
-    exportButton.setBounds(374, 402, 330, 48);
+    generateButton.setBounds(24, 607, 270, 42);
+    exportButton.setBounds(305, 607, 270, 42);
+    previewButton.setBounds(585, 607, 130, 42);
 }

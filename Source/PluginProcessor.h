@@ -13,7 +13,7 @@ public:
 
     const juce::String getName() const override
     {
-        return "ChisesCraist BassMax MIDI OUT 1.2";
+        return "ChisesCraist BassMax Pattern 1.3";
     }
 
     void prepareToPlay(double sampleRate, int) override;
@@ -36,6 +36,16 @@ public:
     juce::AudioProcessorValueTreeState& getParameters() noexcept { return state; }
     void generateNewPattern();
     bool exportMidi(const juce::File& file);
+    struct PatternSnapshot
+    {
+        std::array<int, 32> notes{};
+        std::array<bool, 32> gates{};
+        std::array<int, 32> velocities{};
+        int steps = 16;
+        double swing = 0.0;
+        double gateLength = 0.5;
+    };
+    PatternSnapshot getPatternSnapshot();
     int getPatternSeed() const noexcept { return static_cast<int>(state.getRawParameterValue("seed")->load()); }
 
 
@@ -101,7 +111,13 @@ private:
     int activeNote = -1;
     int activeStep = -1;
     int previousSeed = -1;
+    int previousGroove = -1, previousRoot = -1, previousDensity = -1, previousVariation = -1;
     juce::CriticalSection patternLock;
+    std::atomic<bool> previewEnabled { true };
+public:
+    void setPreviewEnabled(bool enabled) noexcept { previewEnabled.store(enabled); }
+    bool isPreviewEnabled() const noexcept { return previewEnabled.load(); }
+private:
 
     std::array<int, 32> pitches{};
     std::array<bool, 32> gates{};

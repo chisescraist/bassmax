@@ -1,0 +1,12 @@
+CHISESCRAIST BASSMAX PATTERN 1.3 - CODIGO FUENTE
+
+Incluye:
+- Vista previa del patron de 16/32 pasos, nota y duracion en la propia ventana.
+- GENERATE cambia la semilla, y el piano roll se actualiza.
+- EXPORT MIDI guarda el mismo patron mostrado.
+- PREVIEW ON/OFF permite escuchar o silenciar el sintetizador interno; GAIN inicia en 0.22.
+- Emite eventos MIDI durante la reproduccion de Live, PERO que Live permita enrutar esos eventos a Serum/Simpler desde un VST3 instrumento NO ESTA GARANTIZADO. No se presenta como conexion confirmada.
+
+IMPORTANTE: Este proyecto NO contiene un VST3 compilado. El codigo no ha sido compilado ni probado en Ableton en este entorno. Guardar copia del plugin que ya funciona y probar este en un proyecto vacio. Si Live no ofrece BassMax como origen MIDI, la solucion funcional sigue siendo EXPORT MIDI a una pista con Serum/Simpler. Para MIDI en tiempo real garantizado dentro de una misma pista se requiere una implementacion y prueba especifica para Live, potencialmente Max for Live, no simplemente renombrar este VST3.
+
+Para compilar: subir el contenido de este ZIP a una rama de GitHub, ejecutar el workflow en Actions y descargar el artifact VST3. No reemplazar el plugin estable.

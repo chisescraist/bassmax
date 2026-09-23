@@ -4,13 +4,15 @@
 #include <array>
 #include <memory>
 
-class BassMaxKnobEditor final : public juce::AudioProcessorEditor
+class BassMaxKnobEditor final : public juce::AudioProcessorEditor, private juce::Timer
 {
 public:
     explicit BassMaxKnobEditor(TechHouseBassLab&);
+    ~BassMaxKnobEditor() override;
     void paint(juce::Graphics&) override;
     void resized() override;
 private:
+    void timerCallback() override;
     TechHouseBassLab& processor;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::array<juce::Slider, 11> knobs;
@@ -18,6 +20,7 @@ private:
     std::array<std::unique_ptr<Attachment>, 11> attachments;
     juce::TextButton generateButton { "GENERATE BASS" };
     juce::TextButton exportButton { "EXPORT MIDI" };
+    juce::TextButton previewButton { "PREVIEW: ON" };
     juce::ComboBox stepsChoice;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> stepsAttachment;
     std::shared_ptr<juce::FileChooser> exportChooser;

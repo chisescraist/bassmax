@@ -42,7 +42,7 @@ TechHouseBassLab::makeParams()
     f("seed", "Generate: change seed", 0, 9999, 1);
     f("steps", "Pattern length (16 or 32)", 16, 32, 16, 16);
     f("variation", "Pitch variation percent", 0, 100, 35);
-    f("gain", "Internal bass gain (0 = silent preview)", 0, 1, 0.0f, 0.01f);
+    f("gain", "Internal bass gain (0 = silent preview)", 0, 1, 0.22f, 0.01f);
     f("tone", "Internal bass tone", 0, 1, 0.35f, 0.01f);
 
     return { p.begin(), p.end() };
@@ -69,6 +69,7 @@ void TechHouseBassLab::prepareToPlay(double sampleRate, int)
     activeStep = -1;
     lastPpq = -1.0;
     previousSeed = -1;
+    previousGroove = previousRoot = previousDensity = previousVariation = -1;
 }
 
 void TechHouseBassLab::regenerate(int seed)
@@ -173,10 +174,19 @@ void TechHouseBassLab::processBlock(
             state.getRawParameterValue("seed")->load()
         );
 
-    if (seed != previousSeed)
+    const int grooveNow = static_cast<int>(state.getRawParameterValue("groove")->load());
+    const int rootNow = static_cast<int>(state.getRawParameterValue("root")->load());
+    const int densityNow = static_cast<int>(state.getRawParameterValue("density")->load());
+    const int variationNow = static_cast<int>(state.getRawParameterValue("variation")->load());
+    if (seed != previousSeed || grooveNow != previousGroove || rootNow != previousRoot
+        || densityNow != previousDensity || variationNow != previousVariation)
     {
         regenerate(seed);
         previousSeed = seed;
+        previousGroove = grooveNow;
+        previousRoot = rootNow;
+        previousDensity = densityNow;
+        previousVariation = variationNow;
     }
 
     juce::AudioPlayHead::CurrentPositionInfo pos;
@@ -234,8 +244,8 @@ void TechHouseBassLab::processBlock(
             state.getRawParameterValue("steps")->load()
         );
 
-    // MIDI-only preview: external Serum/Simpler generates the sound.
-    const double gain = 0.0;
+    // Audible internal preview remains available until external routing is verified.
+    const double gain = previewEnabled.load() ? state.getRawParameterValue("gain")->load() : 0.0;
 
     const double tone =
         state.getRawParameterValue("tone")->load();
@@ -285,10 +295,10 @@ void TechHouseBassLab::processBlock(
             static_cast<double>(globalStep) / 4.0
             + (globalStep % 2 != 0 ? swing / 4.0 : 0.0);
 
-        if (index != activeStep)
+        if (globalStep != activeStep)
         {
             noteOff(out, i);
-            activeStep = index;
+            activeStep = globalStep;
 
             if (gates[index])
             {
@@ -391,21 +401,13 @@ void TechHouseBassLab::generateNewPattern()
 
 bool TechHouseBassLab::exportMidi(const juce::File& file)
 {
-    // Use the same generator as playback, then snapshot notes while locked.
-    const int seed = getPatternSeed();
-    regenerate(seed);
-    std::array<int, 32> noteCopy{};
-    std::array<bool, 32> gateCopy{};
-    std::array<int, 32> velocityCopy{};
-    {
-        const juce::ScopedLock lock(patternLock);
-        noteCopy = pitches;
-        gateCopy = gates;
-        velocityCopy = velocities;
-    }
-    const int steps = juce::jlimit(16, 32, static_cast<int>(state.getRawParameterValue("steps")->load()));
-    const double swing = state.getRawParameterValue("swing")->load() / 100.0;
-    const double gateLength = state.getRawParameterValue("length")->load() / 100.0;
+    const auto snapshot = getPatternSnapshot();
+    const auto& noteCopy = snapshot.notes;
+    const auto& gateCopy = snapshot.gates;
+    const auto& velocityCopy = snapshot.velocities;
+    const int steps = snapshot.steps;
+    const double swing = snapshot.swing;
+    const double gateLength = snapshot.gateLength;
     constexpr int ticksPerQuarter = 960;
     constexpr double ticksPerStep = ticksPerQuarter / 4.0;
     juce::MidiMessageSequence sequence;
@@ -427,6 +429,45 @@ bool TechHouseBassLab::exportMidi(const juce::File& file)
     const bool ok = midiFile.writeTo(*stream);
     stream->flush();
     return ok;
+}
+
+TechHouseBassLab::PatternSnapshot TechHouseBassLab::getPatternSnapshot()
+{
+    const int seed = getPatternSeed();
+    const int groove = static_cast<int>(state.getRawParameterValue("groove")->load());
+    const int root = static_cast<int>(state.getRawParameterValue("root")->load());
+    const int density = static_cast<int>(state.getRawParameterValue("density")->load());
+    const int variation = static_cast<int>(state.getRawParameterValue("variation")->load());
+    PatternSnapshot snapshot;
+    {
+        const juce::ScopedLock lock(patternLock);
+        // Rebuild deterministically when a parameter changes, even while transport is stopped.
+        if (seed != previousSeed || groove != previousGroove || root != previousRoot
+            || density != previousDensity || variation != previousVariation)
+        {
+            // regenerate() also takes patternLock, so release before calling below.
+        }
+    }
+    if (seed != previousSeed || groove != previousGroove || root != previousRoot
+        || density != previousDensity || variation != previousVariation)
+    {
+        regenerate(seed);
+        previousSeed = seed;
+        previousGroove = groove;
+        previousRoot = root;
+        previousDensity = density;
+        previousVariation = variation;
+    }
+    {
+        const juce::ScopedLock lock(patternLock);
+        snapshot.notes = pitches;
+        snapshot.gates = gates;
+        snapshot.velocities = velocities;
+    }
+    snapshot.steps = juce::jlimit(16, 32, static_cast<int>(state.getRawParameterValue("steps")->load()));
+    snapshot.swing = state.getRawParameterValue("swing")->load() / 100.0;
+    snapshot.gateLength = state.getRawParameterValue("length")->load() / 100.0;
+    return snapshot;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
