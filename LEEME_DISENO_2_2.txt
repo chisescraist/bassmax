@@ -1,0 +1,6 @@
+BassMax 2.2 - interfaz vintage inspirada en el concepto visual aprobado.
+Base: BassMax 2.1 Piano Roll Editable.
+Cambios: interfaz JUCE dibujada de forma nativa (no una imagen fija), 18 perillas en 3 filas de 6, selector de compases en encabezado, piano roll oscuro con notas ámbar, botones y selectores con bordes dorados y controles compactos.
+Se conservan las funciones del proyecto base, incluido el drag MIDI y la edicion del piano roll.
+La imagen conceptual es una referencia visual: no se promete reproduccion pixel por pixel.
+El ZIP es codigo fuente. Compilar y comprobar en Ableton antes de sustituir la version instalada.

@@ -42,6 +42,7 @@ private:
     int editSource = -1, editTarget = -1, editPitch = 0;
     int stepAt(juce::Point<float>) const;
     int pitchAt(juce::Point<float>) const;
+    std::unique_ptr<juce::LookAndFeel_V4> vintageLook;
     TechHouseBassLab& processor;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::array<juce::Slider, 19> knobs;
