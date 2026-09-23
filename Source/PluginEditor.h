@@ -34,8 +34,14 @@ public:
     ~BassMaxKnobEditor() override;
     void paint(juce::Graphics&) override;
     void resized() override;
+    void mouseDown(const juce::MouseEvent&) override;
+    void mouseDrag(const juce::MouseEvent&) override;
+    void mouseUp(const juce::MouseEvent&) override;
 private:
     void timerCallback() override;
+    int editSource = -1, editTarget = -1, editPitch = 0;
+    int stepAt(juce::Point<float>) const;
+    int pitchAt(juce::Point<float>) const;
     TechHouseBassLab& processor;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     std::array<juce::Slider, 19> knobs;

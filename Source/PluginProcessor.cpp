@@ -566,6 +566,43 @@ void TechHouseBassLab::generateResponse()
     phraseView.store(1);
 }
 
+bool TechHouseBassLab::editNote(int sourceStep, int targetStep, int newPitch, bool erase)
+{
+    const auto snapshot = getDisplayedPatternSnapshot();
+    if (sourceStep < 0 || sourceStep >= snapshot.steps || targetStep < 0 || targetStep >= snapshot.steps) return false;
+    const int view = phraseView.load() == 1 && responseAvailable.load() ? 1 : 0;
+    if (view == 0) getPatternSnapshot();
+    const juce::ScopedLock lock(patternLock);
+    auto& gg = view ? responsePattern.gates : gates;
+    auto& nn = view ? responsePattern.notes : pitches;
+    auto& vv = view ? responsePattern.velocities : velocities;
+    if (!gg[static_cast<size_t>(sourceStep)]) return false;
+    const int velocity = vv[static_cast<size_t>(sourceStep)];
+    gg[static_cast<size_t>(sourceStep)] = false;
+    if (!erase)
+    {
+        gg[static_cast<size_t>(targetStep)] = true;
+        nn[static_cast<size_t>(targetStep)] = juce::jlimit(24, 84, newPitch);
+        vv[static_cast<size_t>(targetStep)] = velocity;
+    }
+    return true;
+}
+
+bool TechHouseBassLab::addNote(int step, int pitch)
+{
+    const auto snapshot = getDisplayedPatternSnapshot();
+    if (step < 0 || step >= snapshot.steps) return false;
+    const int view = phraseView.load() == 1 && responseAvailable.load() ? 1 : 0;
+    const juce::ScopedLock lock(patternLock);
+    auto& gg = view ? responsePattern.gates : gates;
+    auto& nn = view ? responsePattern.notes : pitches;
+    auto& vv = view ? responsePattern.velocities : velocities;
+    gg[static_cast<size_t>(step)] = true;
+    nn[static_cast<size_t>(step)] = juce::jlimit(24, 84, pitch);
+    vv[static_cast<size_t>(step)] = 105;
+    return true;
+}
+
 TechHouseBassLab::PatternSnapshot TechHouseBassLab::getDisplayedPatternSnapshot()
 {
     const auto original = getPatternSnapshot();

@@ -42,6 +42,8 @@ public:
     bool canRedoGenerate() const noexcept { return redoAvailable.load(); }
     bool exportMidi(const juce::File& file);
     void generateResponse();
+    bool editNote(int sourceStep, int targetStep, int newPitch, bool erase = false);
+    bool addNote(int step, int pitch);
     void setPhraseView(int view) noexcept { phraseView.store(juce::jlimit(0, 2, view)); }
     int getPhraseView() const noexcept { return phraseView.load(); }
     bool hasResponse() const noexcept { return responseAvailable.load(); }

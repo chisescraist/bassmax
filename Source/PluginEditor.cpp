@@ -148,19 +148,19 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
 
     const auto pattern = processor.getDisplayedPatternSnapshot();
     const auto plot = juce::Rectangle<float>(26.0f, 488.0f, 688.0f, 112.0f);
-    g.setColour(juce::Colour(0xff202c38));
+    g.setColour(juce::Colour(0xff17191d));
     g.fillRoundedRectangle(plot, 7.0f);
     const int low = 24, high = 72;
-    for (int n = low; n <= high; n += 12)
+    for (int n = low; n <= high; ++n)
     {
         const float y = plot.getBottom() - (n - low) * plot.getHeight() / (high-low);
-        g.setColour(juce::Colour(0xff344351));
+        g.setColour(juce::Colour(n % 12 == 0 ? 0xff50565b : 0xff303338));
         g.drawHorizontalLine(static_cast<int>(y), plot.getX(), plot.getRight());
     }
     for (int i = 0; i <= 16; ++i)
     {
         const float x = plot.getX() + plot.getWidth() * i / 16.0f;
-        g.setColour(juce::Colour(i % 4 == 0 ? 0xff5b6d7d : 0xff344351));
+        g.setColour(juce::Colour(i % 4 == 0 ? 0xff656565 : 0xff353535));
         g.drawVerticalLine(static_cast<int>(x), plot.getY(), plot.getBottom());
     }
     const int firstStep = juce::jlimit(0, pattern.bars - 1, pageChoice.getSelectedId() - 1) * 16;
@@ -173,13 +173,13 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
         const float width = juce::jmax(2.0f, static_cast<float>(pattern.gateLength * stepWidth) - 1.0f);
         const int note = juce::jlimit(low, high, pattern.notes[static_cast<size_t>(i)]);
         const float y = plot.getBottom() - (note - low + 0.5f) * plot.getHeight() / (high-low);
-        g.setColour(juce::Colour(0xff55dbc2));
-        g.fillRoundedRectangle(start, y - 4.0f, width, 8.0f, 2.0f);
+        g.setColour(juce::Colour(0xffffbd32));
+        g.fillRoundedRectangle(start, y - 3.0f, width, 6.0f, 2.0f);
     }
     g.setColour(juce::Colour(0xffb5c8d3));
     g.setFont(juce::Font(juce::FontOptions(11.0f)));
     const auto mode = processor.getPhraseView();
-    g.drawText(juce::String(mode == 0 ? "PATTERN A" : mode == 1 ? "RESPONSE B" : "A + B") + "  ·  " + juce::String(pattern.bars * (mode == 2 ? 2 : 1)) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 608, 690, 18, juce::Justification::centredLeft);
+    g.drawText(juce::String(mode == 2 ? "A+B: EDITAR A O B POR SEPARADO  ·  " : "ARRASTRAR NOTA: MOVER  ·  DOBLE CLIC: CREAR  ·  CLIC DERECHO: BORRAR  ·  ") + juce::String(mode == 0 ? "PATTERN A" : mode == 1 ? "RESPONSE B" : "A + B") + "  ·  " + juce::String(pattern.bars * (mode == 2 ? 2 : 1)) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 608, 690, 18, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
@@ -231,4 +231,57 @@ void BassMaxKnobEditor::startMidiDrag()
     // depends on its VST3 hosting and Windows drag/drop support.
     juce::DragAndDropContainer::performExternalDragDropOfFiles(
         juce::StringArray { tempFile.getFullPathName() }, false, this);
+}
+
+int BassMaxKnobEditor::stepAt(juce::Point<float> p) const
+{
+    if (p.x < 26.0f || p.x >= 714.0f || p.y < 488.0f || p.y >= 600.0f) return -1;
+    const int bar = juce::jmax(0, pageChoice.getSelectedId() - 1);
+    return bar * 16 + juce::jlimit(0, 15, static_cast<int>((p.x - 26.0f) / 43.0f));
+}
+int BassMaxKnobEditor::pitchAt(juce::Point<float> p) const
+{
+    return juce::jlimit(24, 72, juce::roundToInt(24.0f + (600.0f - p.y) * 48.0f / 112.0f - 0.5f));
+}
+void BassMaxKnobEditor::mouseDown(const juce::MouseEvent& e)
+{
+    editSource = -1;
+    if (processor.getPhraseView() == 2) return;
+    const int step = stepAt(e.position);
+    if (step < 0) return;
+    const auto pattern = processor.getDisplayedPatternSnapshot();
+    if (e.mods.isRightButtonDown())
+    {
+        processor.editNote(step, step, pitchAt(e.position), true);
+        repaint();
+        return;
+    }
+    if (e.getNumberOfClicks() >= 2)
+    {
+        processor.addNote(step, pitchAt(e.position));
+        repaint();
+        return;
+    }
+    if (pattern.gates[static_cast<size_t>(step)])
+    {
+        editSource = editTarget = step;
+        editPitch = pattern.notes[static_cast<size_t>(step)];
+    }
+}
+void BassMaxKnobEditor::mouseDrag(const juce::MouseEvent& e)
+{
+    if (editSource < 0) return;
+    const int step = stepAt(e.position);
+    if (step >= 0) editTarget = step;
+    editPitch = pitchAt(e.position);
+    repaint();
+}
+void BassMaxKnobEditor::mouseUp(const juce::MouseEvent& e)
+{
+    if (editSource < 0) return;
+    const int step = stepAt(e.position);
+    if (step >= 0) editTarget = step;
+    processor.editNote(editSource, editTarget, editPitch);
+    editSource = -1;
+    repaint();
 }

@@ -1,0 +1,4 @@
+BassMax 2.1 - Piano roll editable (beta)
+Selecciona A o B y arrastra una nota para cambiar su paso (rejilla de semicorcheas) y altura. Doble clic crea una nota; clic derecho la borra. A+B es una vista combinada: edita A y B por separado.
+La duracion de las notas sigue controlada por GATE global. No se implemento redimension individual de notas ni historial de ediciones. DRAG MIDI y EXPORT MIDI usan las notas editadas.
+No compilado ni probado en Ableton. Conserva la version 2.0.
