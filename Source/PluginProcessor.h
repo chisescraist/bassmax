@@ -13,7 +13,7 @@ public:
 
     const juce::String getName() const override
     {
-        return "Tech House Bass Lab";
+        return "ChisesCraist BassMax DIAG";
     }
 
     void prepareToPlay(double sampleRate, int) override;
@@ -31,9 +31,10 @@ public:
         juce::MidiBuffer&
     ) override;
 
-    juce::AudioProcessorEditor* createEditor() override;
-    juce::AudioProcessorValueTreeState& parameters() { return state; }
-    bool exportPatternMidi(const juce::File& destination);
+    juce::AudioProcessorEditor* createEditor() override
+    {
+        return new juce::GenericAudioProcessorEditor(*this);
+    }
 
     bool hasEditor() const override
     {

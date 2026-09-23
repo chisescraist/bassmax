@@ -1,0 +1,11 @@
+CHISESCRAIST BASSMAX DIAG - PRUEBA CONTROLADA
+
+Esta compilacion usa exclusivamente el procesador y el editor generico del BassMax V1 original. NO contiene el editor grafico ni la exportacion MIDI de V2. Cambia los identificadores del plugin para evitar colision con V1 y V2.
+
+1. Dejar V2 y V2.1 fuera de TODAS las carpetas de plugins de Ableton, incluida F:\_Ableton\serum. Guardar V1 estable.
+2. Subir el CONTENIDO de esta carpeta a una rama NUEVA del repositorio (por ejemplo diag-v1) y ejecutar el workflow manualmente desde esa rama. NO reemplazar main ni el proyecto estable.
+3. Descargar el artifact de Windows desde Actions. Instalar unicamente el .vst3 diagnostico, sin renombrar el contenido interno.
+4. En Live, proyecto vacio, insertar una sola vez ChisesCraist BassMax DIAG. Si falla, retirar el plugin y adjuntar el nuevo informe de cierre.
+5. Si abre, probar RUN. Esta prueba no certifica que V2 este arreglada; solo aisla el editor nuevo y las funciones nuevas.
+
+No se compilo ni se probo en Ableton en este entorno.
