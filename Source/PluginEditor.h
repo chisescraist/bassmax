@@ -43,6 +43,8 @@ private:
     std::array<std::unique_ptr<Attachment>, 19> attachments;
     juce::TextButton generateButton { "GENERATE BASS" };
     juce::TextButton exportButton { "EXPORT MIDI" };
+    juce::TextButton responseButton { "RESPONSE" };
+    juce::ComboBox phraseChoice;
     juce::TextButton undoButton { "UNDO GENERATE" };
     juce::TextButton redoButton { "REDO" };
     BassMaxDragMidiButton dragButton;

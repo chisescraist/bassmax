@@ -1,0 +1,11 @@
+BassMax 2.0 · RESPONSE (proyecto fuente)
+
+GENERATE crea la frase A. RESPONSE crea una frase B a partir de A y conserva A.
+Selector A / B / A+B: controla la vista previa, el MIDI exportado y DRAG MIDI.
+A+B concatena las frases, por ejemplo 4+4 = 8 compases.
+RESPONSE vuelve a generar B si se pulsa otra vez. GENERATE crea una A nueva e invalida B.
+La frase B usa el estilo musical seleccionado, notas y posiciones de la frase A.
+
+La vista piano roll muestra A o B por compas; en modo A+B muestra la frase B por compas, y la exportacion incluye ambas.
+El proyecto requiere compilar JUCE en Windows con GitHub Actions. No se ha probado en Ableton.
+Conservar la version 1.9 hasta verificar la compilacion y el funcionamiento.

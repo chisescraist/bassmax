@@ -14,7 +14,7 @@ public:
 
     const juce::String getName() const override
     {
-        return "ChisesCraist BassMax 1.7";
+        return "ChisesCraist BassMax 2.0";
     }
 
     void prepareToPlay(double sampleRate, int) override;
@@ -41,6 +41,10 @@ public:
     bool canUndoGenerate() const noexcept { return undoAvailable.load(); }
     bool canRedoGenerate() const noexcept { return redoAvailable.load(); }
     bool exportMidi(const juce::File& file);
+    void generateResponse();
+    void setPhraseView(int view) noexcept { phraseView.store(juce::jlimit(0, 2, view)); }
+    int getPhraseView() const noexcept { return phraseView.load(); }
+    bool hasResponse() const noexcept { return responseAvailable.load(); }
     struct PatternSnapshot
     {
         std::array<int, 256> notes{};
@@ -53,6 +57,7 @@ public:
         double gateLength = 0.5;
     };
     PatternSnapshot getPatternSnapshot();
+    PatternSnapshot getDisplayedPatternSnapshot();
     int getPatternSeed() const noexcept { return static_cast<int>(state.getRawParameterValue("seed")->load()); }
 
 
@@ -133,6 +138,10 @@ public:
     bool isPreviewEnabled() const noexcept { return previewEnabled.load(); }
 private:
 
+    PatternSnapshot responsePattern;
+    std::atomic<bool> responseAvailable { false };
+    std::atomic<int> phraseView { 0 };
+    int responseSeed = 0;
     std::array<int, 256> pitches{};
     std::array<bool, 256> gates{};
     std::array<int, 256> velocities{};

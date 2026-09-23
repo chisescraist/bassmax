@@ -331,8 +331,10 @@ void TechHouseBassLab::processBlock(
                 std::floor(ppq / 4.0) * 16.0
             ) + step;
 
-        const int index =
-            ((globalStep % length) + length) % length;
+        const int phraseMode = responseAvailable.load() ? phraseView.load() : 0;
+        const int phraseStep = ((globalStep % (phraseMode == 2 ? length * 2 : length)) + (phraseMode == 2 ? length * 2 : length)) % (phraseMode == 2 ? length * 2 : length);
+        const bool playAnswer = phraseMode == 1 || (phraseMode == 2 && phraseStep >= length);
+        const int index = phraseStep % length;
 
         const double stepStart =
             static_cast<double>(globalStep) / 4.0
@@ -343,16 +345,17 @@ void TechHouseBassLab::processBlock(
             noteOff(out, i);
             activeStep = globalStep;
 
-            if (gates[index])
+            const bool hit = playAnswer ? responsePattern.gates[static_cast<size_t>(index)] : gates[index];
+            if (hit)
             {
-                activeNote = pitches[index];
+                activeNote = playAnswer ? responsePattern.notes[static_cast<size_t>(index)] : pitches[index];
 
                 out.addEvent(
                     juce::MidiMessage::noteOn(
                         1,
                         activeNote,
                         static_cast<juce::uint8>(
-                            velocities[index]
+                            (playAnswer ? responsePattern.velocities[static_cast<size_t>(index)] : velocities[index])
                         )
                     ),
                     i
@@ -479,6 +482,8 @@ void TechHouseBassLab::generateNewPattern()
     auto* parameter = state.getParameter("seed");
     if (parameter == nullptr) return;
     undoEntry = captureHistory();
+    responseAvailable.store(false);
+    phraseView.store(0);
     undoAvailable.store(true);
     redoAvailable.store(false);
     const int oldSeed = getPatternSeed();
@@ -495,6 +500,8 @@ bool TechHouseBassLab::undoGenerate()
 {
     if (!undoAvailable.load()) return false;
     redoEntry = captureHistory();
+    responseAvailable.store(false);
+    phraseView.store(0);
     restoreHistory(undoEntry);
     undoAvailable.store(false);
     redoAvailable.store(true);
@@ -505,36 +512,100 @@ bool TechHouseBassLab::redoGenerate()
 {
     if (!redoAvailable.load()) return false;
     undoEntry = captureHistory();
+    responseAvailable.store(false);
+    phraseView.store(0);
     restoreHistory(redoEntry);
     redoAvailable.store(false);
     undoAvailable.store(true);
     return true;
 }
 
+void TechHouseBassLab::generateResponse()
+{
+    const auto original = getPatternSnapshot();
+    const int style = juce::jlimit(0, 2, static_cast<int>(state.getRawParameterValue("style")->load()));
+    const int root = static_cast<int>(state.getRawParameterValue("root")->load());
+    juce::Random rng(juce::Random::getSystemRandom().nextInt());
+    PatternSnapshot answer = original;
+    const int steps = original.steps;
+    const int intervals[3][5] = { {0, 0, 3, 5, 7}, {0, 3, 5, 7, 10}, {0, 2, 3, 5, 7} };
+    for (int bar = 0; bar < original.bars; ++bar)
+    {
+        for (int step = 0; step < 16; ++step)
+        {
+            const int i = bar * 16 + step;
+            const int source = (bar % 2 == 0 ? bar : bar - 1) * 16 + step;
+            const bool sourceHit = original.gates[static_cast<size_t>(source)];
+            const bool rest = (style == 0 ? (step == 0 || step == 8) : style == 1 ? (step < 4) : (step == 0 || step == 4));
+            bool hit = sourceHit;
+            if (rest && rng.nextInt(100) < 65) hit = false;
+            if (!hit && !rest && rng.nextInt(100) < (style == 1 ? 28 : style == 2 ? 24 : 18)) hit = true;
+            if (hit && rng.nextInt(100) < 15) hit = false;
+            answer.gates[static_cast<size_t>(i)] = hit;
+            const int offset = intervals[style][rng.nextInt(5)];
+            const int originalNote = original.notes[static_cast<size_t>(source)];
+            answer.notes[static_cast<size_t>(i)] = juce::jlimit(24, 84,
+                (rng.nextInt(100) < 58 ? originalNote : root + offset) + (style == 1 && bar % 4 == 3 ? 12 : 0));
+            answer.velocities[static_cast<size_t>(i)] = juce::jlimit(40, 125,
+                original.velocities[static_cast<size_t>(source)] + rng.nextInt(25) - 12);
+        }
+        // A short closing gesture leads back to the original phrase.
+        const int finalStep = bar * 16 + 15;
+        if (bar % 2 == 1 && rng.nextBool())
+        {
+            answer.gates[static_cast<size_t>(finalStep)] = true;
+            answer.notes[static_cast<size_t>(finalStep)] = root + (style == 1 ? 7 : 0);
+            answer.velocities[static_cast<size_t>(finalStep)] = 98;
+        }
+    }
+    {
+        const juce::ScopedLock lock(patternLock);
+        responsePattern = answer;
+    }
+    responseAvailable.store(true);
+    phraseView.store(1);
+}
+
+TechHouseBassLab::PatternSnapshot TechHouseBassLab::getDisplayedPatternSnapshot()
+{
+    const auto original = getPatternSnapshot();
+    if (phraseView.load() == 0 || !responseAvailable.load()) return original;
+    const juce::ScopedLock lock(patternLock);
+    return responsePattern;
+}
+
 bool TechHouseBassLab::exportMidi(const juce::File& file)
 {
-    const auto snapshot = getPatternSnapshot();
-    const auto& noteCopy = snapshot.notes;
-    const auto& gateCopy = snapshot.gates;
-    const auto& velocityCopy = snapshot.velocities;
-    const int steps = snapshot.steps;
-    const double swing = snapshot.swing;
-    const double gateLength = snapshot.gateLength;
+    const auto original = getPatternSnapshot();
+    const int view = responseAvailable.load() ? phraseView.load() : 0;
+    PatternSnapshot answer;
+    if (view != 0)
+    {
+        const juce::ScopedLock lock(patternLock);
+        answer = responsePattern;
+    }
     constexpr int ticksPerQuarter = 960;
     constexpr double ticksPerStep = ticksPerQuarter / 4.0;
     juce::MidiMessageSequence sequence;
     sequence.addEvent(juce::MidiMessage::tempoMetaEvent(
-        juce::roundToInt(60000000.0 / juce::jlimit(60.0, 200.0, snapshot.bpm))), 0.0);
+        juce::roundToInt(60000000.0 / juce::jlimit(60.0, 200.0, original.bpm))), 0.0);
     sequence.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 4), 0.0);
-    for (int i = 0; i < steps; ++i)
+    auto append = [&](const PatternSnapshot& pattern, int stepOffset)
     {
-        if (!gateCopy[static_cast<size_t>(i)]) continue;
-        const double start = i * ticksPerStep + ((i % 2) ? swing * ticksPerStep : 0.0);
-        const double end = start + juce::jmax(1.0, gateLength * ticksPerStep);
-        const int note = juce::jlimit(0, 127, noteCopy[static_cast<size_t>(i)]);
-        sequence.addEvent(juce::MidiMessage::noteOn(1, note, static_cast<juce::uint8>(velocityCopy[static_cast<size_t>(i)])), start);
-        sequence.addEvent(juce::MidiMessage::noteOff(1, note), end);
-    }
+        for (int i = 0; i < pattern.steps; ++i)
+        {
+            if (!pattern.gates[static_cast<size_t>(i)]) continue;
+            const double start = (stepOffset + i) * ticksPerStep + ((i % 2) ? pattern.swing * ticksPerStep : 0.0);
+            const double end = start + juce::jmax(1.0, pattern.gateLength * ticksPerStep);
+            const int note = juce::jlimit(0, 127, pattern.notes[static_cast<size_t>(i)]);
+            sequence.addEvent(juce::MidiMessage::noteOn(1, note,
+                static_cast<juce::uint8>(pattern.velocities[static_cast<size_t>(i)])), start);
+            sequence.addEvent(juce::MidiMessage::noteOff(1, note), end);
+        }
+    };
+    if (view == 0 || view == 2) append(original, 0);
+    if (view == 1) append(answer, 0);
+    if (view == 2) append(answer, original.steps);
     sequence.updateMatchedPairs();
     juce::MidiFile midiFile;
     midiFile.setTicksPerQuarterNote(ticksPerQuarter);

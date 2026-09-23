@@ -59,6 +59,14 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     pageChoice.onChange = [this] { repaint(); };
     addAndMakeVisible(generateButton);
     addAndMakeVisible(exportButton);
+    addAndMakeVisible(responseButton);
+    responseButton.onClick = [this] { processor.generateResponse(); phraseChoice.setSelectedId(2, juce::sendNotification); repaint(); };
+    phraseChoice.addItem("A · ORIGINAL", 1);
+    phraseChoice.addItem("B · RESPONSE", 2);
+    phraseChoice.addItem("A+B · COMPLETA", 3);
+    phraseChoice.setSelectedId(1, juce::dontSendNotification);
+    phraseChoice.onChange = [this] { processor.setPhraseView(phraseChoice.getSelectedId() - 1); repaint(); };
+    addAndMakeVisible(phraseChoice);
     addAndMakeVisible(undoButton);
     addAndMakeVisible(redoButton);
     undoButton.onClick = [this] { processor.undoGenerate(); repaint(); };
@@ -76,7 +84,7 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
         processor.setPreviewEnabled(!processor.isPreviewEnabled());
         previewButton.setButtonText(processor.isPreviewEnabled() ? "PREVIEW: ON" : "PREVIEW: OFF");
     };
-    generateButton.onClick = [this] { processor.generateNewPattern(); };
+    generateButton.onClick = [this] { processor.generateNewPattern(); phraseChoice.setSelectedId(1, juce::dontSendNotification); repaint(); };
     exportButton.onClick = [this]
     {
         exportChooser = std::make_shared<juce::FileChooser>("Guardar patrón MIDI", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("ChisesCraist_BassMax.mid"), "*.mid");
@@ -109,6 +117,10 @@ void BassMaxKnobEditor::timerCallback()
 {
     undoButton.setEnabled(processor.canUndoGenerate());
     redoButton.setEnabled(processor.canRedoGenerate());
+    phraseChoice.setItemEnabled(2, processor.hasResponse());
+    phraseChoice.setItemEnabled(3, processor.hasResponse());
+    if (phraseChoice.getSelectedId() != processor.getPhraseView() + 1)
+        phraseChoice.setSelectedId(processor.getPhraseView() + 1, juce::dontSendNotification);
     const auto bars = processor.getPatternSnapshot().bars;
     const int oldSelection = pageChoice.getSelectedId();
     if (pageChoice.getNumItems() != bars)
@@ -134,7 +146,7 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     g.setFont(juce::Font(juce::FontOptions(12.0f)));
     g.drawText("PATRON MIDI · VISTA PREVIA · MIDI OUT (DEPENDIENTE DEL HOST)", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
 
-    const auto pattern = processor.getPatternSnapshot();
+    const auto pattern = processor.getDisplayedPatternSnapshot();
     const auto plot = juce::Rectangle<float>(26.0f, 488.0f, 688.0f, 112.0f);
     g.setColour(juce::Colour(0xff202c38));
     g.fillRoundedRectangle(plot, 7.0f);
@@ -166,7 +178,8 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     }
     g.setColour(juce::Colour(0xffb5c8d3));
     g.setFont(juce::Font(juce::FontOptions(11.0f)));
-    g.drawText("MIDI PATTERN  ·  " + juce::String(pattern.bars) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 608, 690, 18, juce::Justification::centredLeft);
+    const auto mode = processor.getPhraseView();
+    g.drawText(juce::String(mode == 0 ? "PATTERN A" : mode == 1 ? "RESPONSE B" : "A + B") + "  ·  " + juce::String(pattern.bars * (mode == 2 ? 2 : 1)) + " BARS  ·  " + juce::String(pattern.bpm, 0) + " BPM  ·  DRAG MIDI", 26, 608, 690, 18, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
@@ -186,6 +199,8 @@ void BassMaxKnobEditor::resized()
     }
     barsChoice.setBounds(22 + 7 % columns * cellW, 96 + 7 / columns * cellH + 19, cellW - 8, 28);
     pageChoice.setBounds(24, 631, 180, 26);
+    phraseChoice.setBounds(214, 631, 190, 26);
+    responseButton.setBounds(414, 631, 160, 26);
     generateButton.setBounds(24, 663, 270, 34);
     exportButton.setBounds(305, 663, 270, 34);
     previewButton.setBounds(585, 663, 130, 34);
