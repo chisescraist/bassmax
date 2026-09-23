@@ -42,7 +42,7 @@ TechHouseBassLab::makeParams()
     f("seed", "Generate: change seed", 0, 9999, 1);
     f("steps", "Pattern length (16 or 32)", 16, 32, 16, 16);
     f("variation", "Pitch variation percent", 0, 100, 35);
-    f("gain", "Internal bass gain", 0, 1, 0.3f, 0.01f);
+    f("gain", "Internal bass gain (0 = silent preview)", 0, 1, 0.0f, 0.01f);
     f("tone", "Internal bass tone", 0, 1, 0.35f, 0.01f);
 
     return { p.begin(), p.end() };
@@ -73,6 +73,7 @@ void TechHouseBassLab::prepareToPlay(double sampleRate, int)
 
 void TechHouseBassLab::regenerate(int seed)
 {
+    const juce::ScopedLock lock(patternLock);
     random.setSeed(seed);
 
     const int groove =
@@ -213,6 +214,8 @@ void TechHouseBassLab::processBlock(
 
         return;
     }
+
+    const juce::ScopedLock patternRead(patternLock);
 
     const double bpm =
         pos.bpm > 1.0 ? pos.bpm : 126.0;
@@ -371,6 +374,59 @@ void TechHouseBassLab::setStateInformation(
     }
 
     previousSeed = -1;
+}
+
+
+void TechHouseBassLab::generateNewPattern()
+{
+    auto* parameter = state.getParameter("seed");
+    if (parameter == nullptr) return;
+    const int oldSeed = getPatternSeed();
+    int nextSeed = juce::Random::getSystemRandom().nextInt(10000);
+    if (nextSeed == oldSeed) nextSeed = (oldSeed + 1) % 10000;
+    parameter->beginChangeGesture();
+    parameter->setValueNotifyingHost(parameter->convertTo0to1(static_cast<float>(nextSeed)));
+    parameter->endChangeGesture();
+}
+
+bool TechHouseBassLab::exportMidi(const juce::File& file)
+{
+    // Use the same generator as playback, then snapshot notes while locked.
+    const int seed = getPatternSeed();
+    regenerate(seed);
+    std::array<int, 32> noteCopy{};
+    std::array<bool, 32> gateCopy{};
+    std::array<int, 32> velocityCopy{};
+    {
+        const juce::ScopedLock lock(patternLock);
+        noteCopy = pitches;
+        gateCopy = gates;
+        velocityCopy = velocities;
+    }
+    const int steps = juce::jlimit(16, 32, static_cast<int>(state.getRawParameterValue("steps")->load()));
+    const double swing = state.getRawParameterValue("swing")->load() / 100.0;
+    const double gateLength = state.getRawParameterValue("length")->load() / 100.0;
+    constexpr int ticksPerQuarter = 960;
+    constexpr double ticksPerStep = ticksPerQuarter / 4.0;
+    juce::MidiMessageSequence sequence;
+    for (int i = 0; i < steps; ++i)
+    {
+        if (!gateCopy[static_cast<size_t>(i)]) continue;
+        const double start = i * ticksPerStep + ((i % 2) ? swing * ticksPerStep : 0.0);
+        const double end = start + juce::jmax(1.0, gateLength * ticksPerStep);
+        const int note = juce::jlimit(0, 127, noteCopy[static_cast<size_t>(i)]);
+        sequence.addEvent(juce::MidiMessage::noteOn(1, note, static_cast<juce::uint8>(velocityCopy[static_cast<size_t>(i)])), start);
+        sequence.addEvent(juce::MidiMessage::noteOff(1, note), end);
+    }
+    sequence.updateMatchedPairs();
+    juce::MidiFile midiFile;
+    midiFile.setTicksPerQuarterNote(ticksPerQuarter);
+    midiFile.addTrack(sequence);
+    auto stream = file.createOutputStream();
+    if (stream == nullptr) return false;
+    const bool ok = midiFile.writeTo(*stream);
+    stream->flush();
+    return ok;
 }
 
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()

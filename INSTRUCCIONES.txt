@@ -1,0 +1,11 @@
+CHISESCRAIST BASSMAX MIDI 1.1 - CODIGO FUENTE
+
+1. Conserva el VST3 de perillas que ya funciona. Esta version tiene identificador distinto.
+2. Sube el contenido de esta carpeta al repositorio GitHub y compila en Actions.
+3. Descarga Artifacts / BassMax-Windows-VST3. Instala solo el VST3 nuevo para la prueba.
+4. Abre Ableton con proyecto vacio. GENERATE crea otra semilla y un nuevo patron Tech House.
+5. EXPORT MIDI guarda 16 o 32 pasos como archivo .mid para arrastrar a una pista con Serum 2 o Simpler.
+6. GAIN empieza en cero para silenciar el sonido interno; subilo solo si queres preescucha.
+7. STEPS ahora es selector de 16 o 32.
+
+AVISO: fuente no compilada ni probada en Ableton en este entorno. Solo se implementa Tech House en esta entrega.

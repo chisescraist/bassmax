@@ -10,9 +10,10 @@ namespace
 BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
-    setSize(740, 410);
+    setSize(740, 480);
     for (size_t i = 0; i < knobs.size(); ++i)
     {
+        if (i == 7) continue; // STEPS uses a 16/32 selector. 
         auto& slider = knobs[i];
         slider.setSliderStyle(juce::Slider::RotaryHorizontalVerticalDrag);
         slider.setTextBoxStyle(juce::Slider::TextBoxBelow, false, 65, 19);
@@ -28,6 +29,30 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
         addAndMakeVisible(captions[i]);
         attachments[i] = std::make_unique<Attachment>(processor.getParameters(), ids[i], slider);
     }
+    stepsChoice.addItem("16 STEPS", 1);
+    stepsChoice.addItem("32 STEPS", 2);
+    addAndMakeVisible(stepsChoice);
+    stepsAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(processor.getParameters(), "steps", stepsChoice);
+    addAndMakeVisible(generateButton);
+    addAndMakeVisible(exportButton);
+    generateButton.onClick = [this] { processor.generateNewPattern(); };
+    exportButton.onClick = [this]
+    {
+        exportChooser = std::make_shared<juce::FileChooser>("Guardar patrón MIDI", juce::File::getSpecialLocation(juce::File::userDocumentsDirectory).getChildFile("ChisesCraist_BassMax.mid"), "*.mid");
+        auto chooser = exportChooser;
+        juce::Component::SafePointer<BassMaxKnobEditor> safeThis(this);
+        chooser->launchAsync(juce::FileBrowserComponent::saveMode | juce::FileBrowserComponent::canSelectFiles | juce::FileBrowserComponent::warnAboutOverwriting,
+            [safeThis, chooser](const juce::FileChooser& selected)
+            {
+                if (safeThis == nullptr) return;
+                auto file = selected.getResult();
+                if (file == juce::File()) return;
+                if (!file.hasFileExtension("mid")) file = file.withFileExtension("mid");
+                if (!safeThis->processor.exportMidi(file))
+                    juce::AlertWindow::showMessageBoxAsync(juce::MessageBoxIconType::WarningIcon, "BassMax", "No se pudo guardar el MIDI.");
+                safeThis->exportChooser.reset();
+            });
+    };
 }
 
 void BassMaxKnobEditor::paint(juce::Graphics& g)
@@ -41,7 +66,7 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
     g.drawText("BASSMAX", 24, 38, getWidth()-48, 40, juce::Justification::centredLeft);
     g.setColour(juce::Colour(0xff9cabb8));
     g.setFont(juce::Font(juce::FontOptions(12.0f)));
-    g.drawText("DIAGNOSTICO DE INTERFAZ  |  MOTOR V1 SIN CAMBIOS", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
+    g.drawText("GENERATE CREA UN PATRON NUEVO  |  EXPORT MIDI PARA SERUM / SIMPLER", 24, 77, getWidth()-48, 20, juce::Justification::centredLeft);
 }
 
 void BassMaxKnobEditor::resized()
@@ -51,9 +76,13 @@ void BassMaxKnobEditor::resized()
     constexpr int cellH = 137;
     for (size_t i = 0; i < knobs.size(); ++i)
     {
+        if (i == 7) continue;
         const int x = 22 + static_cast<int>(i % columns) * cellW;
         const int y = 110 + static_cast<int>(i / columns) * cellH;
         knobs[i].setBounds(x, y, cellW-8, 105);
         captions[i].setBounds(x, y+105, cellW-8, 24);
     }
+    stepsChoice.setBounds(22 + 7 % columns * cellW, 110 + 7 / columns * cellH + 35, cellW - 8, 34);
+    generateButton.setBounds(24, 402, 330, 48);
+    exportButton.setBounds(374, 402, 330, 48);
 }

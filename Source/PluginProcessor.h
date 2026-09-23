@@ -34,6 +34,10 @@ public:
     juce::AudioProcessorEditor* createEditor() override;
 
     juce::AudioProcessorValueTreeState& getParameters() noexcept { return state; }
+    void generateNewPattern();
+    bool exportMidi(const juce::File& file);
+    int getPatternSeed() const noexcept { return static_cast<int>(state.getRawParameterValue("seed")->load()); }
+
 
     bool hasEditor() const override
     {
@@ -97,6 +101,7 @@ private:
     int activeNote = -1;
     int activeStep = -1;
     int previousSeed = -1;
+    juce::CriticalSection patternLock;
 
     std::array<int, 32> pitches{};
     std::array<bool, 32> gates{};
