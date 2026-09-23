@@ -50,6 +50,8 @@ private:
     void startMidiDrag();
     juce::TextButton previewButton { "PREVIEW: ON" };
     juce::ComboBox barsChoice;
+    juce::ComboBox styleChoice;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> styleAttachment;
     juce::ComboBox pageChoice;
     std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> barsAttachment;
     std::shared_ptr<juce::FileChooser> exportChooser;

@@ -1,0 +1,7 @@
+BassMax 1.9: menu TECH HOUSE / MELODIC TECHNO / AFRO TECHNO en la cabecera.
+Cada estilo usa motivos, probabilidades, intervalos y acentos de velocidad diferentes.
+Cambiar el estilo carga un preset de sintetizador nativo editable; el MIDI exportado
+conserva las notas del patron, no los efectos del sintetizador.
+IMPORTANTE: El cambio de estilo modifica el patron actual. El historial UNDO/REDO
+sigue orientado al boton GENERATE, no a todos los cambios manuales de parametros.
+Proyecto fuente: compilar mediante GitHub Actions. No probado dentro de Ableton.

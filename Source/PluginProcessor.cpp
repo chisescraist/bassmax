@@ -33,6 +33,7 @@ TechHouseBassLab::makeParams()
     };
 
     f("run", "RUN (0 off / 1 on)", 0, 1, 1);
+    f("style", "Style: Tech House / Melodic Techno / Afro Techno", 0, 2, 0);
     f("groove", "Groove: 0 Rolling 1 Offbeat 2 Syncopated 3 Minimal",
       0, 3, 0);
     f("root", "Root MIDI note (F1 = 29)", 24, 60, 29);
@@ -81,6 +82,7 @@ void TechHouseBassLab::prepareToPlay(double sampleRate, int)
     reverb.reset();
     reverb.setSampleRate(sr);
     previousSeed = -1;
+    previousStyle = -1;
     previousGroove = previousRoot = previousDensity = previousVariation = -1;
 }
 
@@ -89,6 +91,7 @@ void TechHouseBassLab::regenerate(int seed)
     const juce::ScopedLock lock(patternLock);
     random.setSeed(seed);
 
+    const int style = juce::jlimit(0, 2, static_cast<int>(state.getRawParameterValue("style")->load()));
     const int groove =
         static_cast<int>(state.getRawParameterValue("groove")->load());
 
@@ -101,43 +104,51 @@ void TechHouseBassLab::regenerate(int seed)
     const int variation =
         static_cast<int>(state.getRawParameterValue("variation")->load());
 
-    static const bool bases[4][16] =
-    {
-        { 1,0,0,1,0,0,1,0,1,0,1,0,0,0,1,0 },
-        { 0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0 },
-        { 1,0,0,1,0,0,0,1,0,0,1,0,0,1,0,1 },
-        { 0,0,1,0,0,0,0,1,0,0,0,1,0,0,1,0 }
+    // Each genre has its own rhythmic vocabulary and pitch movement.
+    static const bool motifs[3][4][16] = {
+        { // Tech House: short, punchy syncopations and octave/fifth jumps.
+            {1,0,0,1,0,0,1,0,1,0,1,0,0,0,1,0},
+            {0,0,1,0,0,0,1,0,0,0,1,0,0,0,1,0},
+            {1,0,0,1,0,0,0,1,0,0,1,0,0,1,0,1},
+            {0,0,1,0,0,0,0,1,0,0,0,1,0,0,1,0}
+        },
+        { // Melodic Techno: longer, evolving ostinatos and minor-key movement.
+            {1,0,0,0,1,0,1,0,1,0,0,0,1,0,1,0},
+            {1,0,0,0,0,0,1,0,1,0,0,0,0,0,1,0},
+            {1,0,0,1,0,0,1,0,1,0,0,1,0,0,1,0},
+            {1,0,0,0,1,0,0,0,1,0,0,0,1,0,0,0}
+        },
+        { // Afro Techno: interlocking offbeats, 3+3+2 accents and call/response.
+            {1,0,0,1,0,0,1,0,0,1,0,0,1,0,1,0},
+            {0,0,1,0,0,1,0,0,1,0,0,1,0,0,1,0},
+            {1,0,0,1,0,1,0,0,0,1,0,1,0,0,1,0},
+            {1,0,0,0,1,0,1,0,0,1,0,0,1,0,0,1}
+        }
     };
-
-    static const int offsets[] =
-    {
-        0,0,0,7,0,0,3,0,0,0,7,0,0,3,0,0
+    static const int intervals[3][16] = {
+        {0,0,0,7,0,0,3,0,0,0,7,0,0,3,0,12},
+        {0,0,7,0,3,0,7,0,0,12,7,0,3,0,10,0},
+        {0,0,3,0,7,0,0,10,0,3,0,7,0,0,12,0}
     };
-
     for (int i = 0; i < 256; ++i)
     {
-        // A recognizable groove motif with deterministic, bar-specific variations.
         const int bar = i / 16;
-        const bool base = bases[groove][i % 16];
-        const int barAccent = (bar % 4 == 3 ? 12 : (bar % 4 == 1 ? -5 : 0));
-
-        gates[i] = base
-            ? random.nextInt(100) < std::min(100, density + 35 + barAccent)
-            : random.nextInt(100) < std::max(0, density - 55 + barAccent);
-
-        const int off =
-            random.nextInt(100) < variation
-                ? offsets[(i + bar % 4) % 16]
-                : 0;
-
+        const int step = i % 16;
+        const bool base = motifs[style][groove][step];
+        const int accent = style == 2 ? ((step % 8 == 0 || step % 8 == 3 || step % 8 == 6) ? 13 : -4)
+                         : style == 1 ? ((bar % 4 == 3) ? 9 : -2)
+                                      : ((bar % 4 == 3) ? 12 : 0);
+        const int mainChance = style == 1 ? 19 : style == 2 ? 24 : 35;
+        const int ghostChance = style == 1 ? 72 : style == 2 ? 62 : 55;
+        gates[i] = base ? random.nextInt(100) < juce::jlimit(0, 100, density + mainChance + accent)
+                        : random.nextInt(100) < juce::jmax(0, density - ghostChance + accent);
+        const int interval = intervals[style][(step + (style == 1 ? bar % 4 : 0)) % 16];
+        const int off = random.nextInt(100) < variation ? interval : 0;
         pitches[i] = root + off;
-
-        velocities[i] = juce::jlimit(
-            35,
-            127,
-            85 + (i % 4 == 0 ? 22 : 0)
-               + random.nextInt(17) - 8
-        );
+        const int velocityAccent = style == 2 ? ((step % 8 == 0 || step % 8 == 3 || step % 8 == 6) ? 19 : -5)
+                                 : style == 1 ? (step % 4 == 0 ? 14 : -2)
+                                              : (step % 4 == 0 ? 22 : 0);
+        velocities[i] = juce::jlimit(35, 127, 84 + velocityAccent + random.nextInt(17) - 8);
     }
 }
 
@@ -189,15 +200,17 @@ void TechHouseBassLab::processBlock(
             state.getRawParameterValue("seed")->load()
         );
 
+    const int styleNow = static_cast<int>(state.getRawParameterValue("style")->load());
     const int grooveNow = static_cast<int>(state.getRawParameterValue("groove")->load());
     const int rootNow = static_cast<int>(state.getRawParameterValue("root")->load());
     const int densityNow = static_cast<int>(state.getRawParameterValue("density")->load());
     const int variationNow = static_cast<int>(state.getRawParameterValue("variation")->load());
-    if (seed != previousSeed || grooveNow != previousGroove || rootNow != previousRoot
+    if (seed != previousSeed || styleNow != previousStyle || grooveNow != previousGroove || rootNow != previousRoot
         || densityNow != previousDensity || variationNow != previousVariation)
     {
         regenerate(seed);
         previousSeed = seed;
+        previousStyle = styleNow;
         previousGroove = grooveNow;
         previousRoot = rootNow;
         previousDensity = densityNow;
@@ -427,7 +440,7 @@ void TechHouseBassLab::setStateInformation(
 }
 
 
-namespace { constexpr const char* historyIds[] = { "run", "groove", "root", "density", "swing", "length", "seed", "bars", "variation", "gain", "tone", "bpm" }; }
+namespace { constexpr const char* historyIds[] = { "run", "groove", "root", "density", "swing", "length", "seed", "bars", "variation", "gain", "tone", "bpm", "style" }; }
 
 TechHouseBassLab::HistoryEntry TechHouseBassLab::captureHistory()
 {
@@ -453,6 +466,7 @@ void TechHouseBassLab::restoreHistory(const HistoryEntry& entry)
         gates = entry.pattern.gates;
         velocities = entry.pattern.velocities;
         previousSeed = static_cast<int>(entry.params[6]);
+        previousStyle = static_cast<int>(entry.params[12]);
         previousGroove = static_cast<int>(entry.params[1]);
         previousRoot = static_cast<int>(entry.params[2]);
         previousDensity = static_cast<int>(entry.params[3]);
@@ -535,6 +549,7 @@ bool TechHouseBassLab::exportMidi(const juce::File& file)
 TechHouseBassLab::PatternSnapshot TechHouseBassLab::getPatternSnapshot()
 {
     const int seed = getPatternSeed();
+    const int style = static_cast<int>(state.getRawParameterValue("style")->load());
     const int groove = static_cast<int>(state.getRawParameterValue("groove")->load());
     const int root = static_cast<int>(state.getRawParameterValue("root")->load());
     const int density = static_cast<int>(state.getRawParameterValue("density")->load());
@@ -543,17 +558,18 @@ TechHouseBassLab::PatternSnapshot TechHouseBassLab::getPatternSnapshot()
     {
         const juce::ScopedLock lock(patternLock);
         // Rebuild deterministically when a parameter changes, even while transport is stopped.
-        if (seed != previousSeed || groove != previousGroove || root != previousRoot
+        if (seed != previousSeed || style != previousStyle || groove != previousGroove || root != previousRoot
             || density != previousDensity || variation != previousVariation)
         {
             // regenerate() also takes patternLock, so release before calling below.
         }
     }
-    if (seed != previousSeed || groove != previousGroove || root != previousRoot
+    if (seed != previousSeed || style != previousStyle || groove != previousGroove || root != previousRoot
         || density != previousDensity || variation != previousVariation)
     {
         regenerate(seed);
         previousSeed = seed;
+        previousStyle = style;
         previousGroove = groove;
         previousRoot = root;
         previousDensity = density;

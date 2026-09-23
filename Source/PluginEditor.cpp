@@ -11,6 +11,26 @@ BassMaxKnobEditor::BassMaxKnobEditor(TechHouseBassLab& p)
     : juce::AudioProcessorEditor(p), processor(p)
 {
     setSize(740, 790);
+    styleChoice.addItem("TECH HOUSE", 1);
+    styleChoice.addItem("MELODIC TECHNO", 2);
+    styleChoice.addItem("AFRO TECHNO", 3);
+    addAndMakeVisible(styleChoice);
+    styleAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ComboBoxAttachment>(processor.getParameters(), "style", styleChoice);
+    styleChoice.onChange = [this]
+    {
+        // Genre presets change the native synth timbre; every knob stays editable.
+        const int style = styleChoice.getSelectedId();
+        const char* ids[] = {"attack", "release", "cutoff", "resonance", "drive", "sub", "reverb", "tone", "length", "swing"};
+        const float presets[3][10] = {
+            {4, 125, 720, 0.20f, 0.38f, 0.50f, 0.04f, 0.43f, 45, 16},
+            {15, 340, 1250, 0.34f, 0.27f, 0.58f, 0.15f, 0.60f, 76, 7},
+            {7, 220, 540, 0.23f, 0.42f, 0.68f, 0.10f, 0.35f, 58, 25}
+        };
+        if (style < 1 || style > 3) return;
+        for (int i = 0; i < 10; ++i)
+            if (auto* parameter = processor.getParameters().getParameter(ids[i]))
+                parameter->setValueNotifyingHost(parameter->convertTo0to1(presets[style - 1][i]));
+    };
     startTimerHz(12);
     for (size_t i = 0; i < knobs.size(); ++i)
     {
@@ -81,6 +101,7 @@ BassMaxKnobEditor::~BassMaxKnobEditor()
     stopTimer();
     exportChooser.reset();
     barsAttachment.reset();
+    styleAttachment.reset();
     for (auto& attachment : attachments) attachment.reset();
 }
 
@@ -150,7 +171,8 @@ void BassMaxKnobEditor::paint(juce::Graphics& g)
 
 void BassMaxKnobEditor::resized()
 {
-    // Compact four-row layout: every control and action fits within 740 x 790.
+    // Compact four-row layout with a genre selector in the header.
+    styleChoice.setBounds(472, 45, 241, 30);
     constexpr int columns = 6;
     constexpr int cellW = 116;
     constexpr int cellH = 94;

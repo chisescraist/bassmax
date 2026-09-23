@@ -119,10 +119,10 @@ private:
 
     int activeNote = -1;
     int activeStep = -1;
-    int previousSeed = -1;
+    int previousSeed = -1, previousStyle = -1;
     int previousGroove = -1, previousRoot = -1, previousDensity = -1, previousVariation = -1;
     juce::CriticalSection patternLock;
-    struct HistoryEntry { std::array<float, 12> params{}; PatternSnapshot pattern; };
+    struct HistoryEntry { std::array<float, 13> params{}; PatternSnapshot pattern; };
     HistoryEntry undoEntry, redoEntry;
     std::atomic<bool> undoAvailable { false }, redoAvailable { false };
     HistoryEntry captureHistory();
