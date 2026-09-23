@@ -1,29 +1,5 @@
-TECH HOUSE BASS LAB - PROYECTO FUENTE VST3 (WINDOWS)
-
-IMPORTANTE: Este ZIP NO contiene un VST3 compilado ni probado en Ableton.
-El proyecto es un instrumento VST3 con sintetizador de bajo interno y salida MIDI adicional.
-Ableton Live puede no permitir dirigir la salida MIDI de un VST3 hacia Serum 2.
-El bajo interno permite escuchar los patrones sin depender de esa función.
-
-PARA COMPILAR EN WINDOWS:
-1. Instalar Visual Studio 2022 con Desktop development with C++ y CMake.
-2. Instalar Git y CMake si no vienen con Visual Studio.
-3. Abrir terminal en esta carpeta.
-4. Ejecutar: cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-5. Ejecutar: cmake --build build --config Release --target TechHouseBassLab_VST3
-6. Copiar la carpeta build/TechHouseBassLab_artefacts/Release/VST3/Tech House Bass Lab.vst3
-   a C:/Program Files/Common Files/VST3/
-7. Reiniciar Live y buscar Tech House Bass Lab en Plug-ins > VST3.
-
-ALTERNATIVA: subir este proyecto a un repositorio GitHub y ejecutar
-Actions > Build Windows VST3 > Run workflow. Descargar el artifact del build.
-
-USO:
-- Insertar como instrumento VST3 en una pista MIDI.
-- Iniciar el transporte de Live. RUN=1, Root=29 (F1), Groove=0, Gain=0.3.
-- Cambiar Seed para crear otro patrón reproducible.
-- Groove: 0 Rolling, 1 Offbeat, 2 Syncopated, 3 Minimal.
-- La interfaz es la interfaz genérica de parámetros, no un diseño gráfico personalizado.
-- La salida MIDI hacia Serum 2 NO está garantizada en Ableton Live; usar bajo interno.
-
-ESTADO: código fuente generado aquí. No compilado ni validado en Windows/Ableton.
+CHISESCRAIST BEATMAX 1.0 - PRIMERA VERSION / FUENTE
+Proyecto independiente de BassMax. Interfaz negro y rojo fuego.
+Subir los archivos y carpetas a un repositorio GitHub nuevo; Actions -> BeatMax VST3 Windows -> Run workflow. Descargar artifact BeatMax-Windows-VST3 e instalar en carpeta VST3.
+Incluye nueve pistas de percusion con activar, LOCK, selector de timbre de referencia, volumen, random individual, drag individual; patrones por estilo; 4/8/16 compases; tempo; swing; variacion; preview sintetizado simple; grid de 16 pasos editable; drag conjunto; exportacion conjunto e individuales. MIDI canal 10 y mapeo GM aproximado.
+LIMITACIONES 1.0: el selector SOUND es un preset visual reservado para una futura biblioteca de samples; la vista previa es sintetica y NO cambia de timbre segun SOUND. La rejilla edita un paso a la vez y replica ese paso en todos los compases. No incluye sampler ni archivos WAV. El arrastre desde VST3 requiere probarse en Ableton. BPM en archivo MIDI no cambia automaticamente el tempo global de Ableton. No compilado ni probado en Ableton.
