@@ -13,7 +13,7 @@ public:
 
     const juce::String getName() const override
     {
-        return "ChisesCraist BassMax DIAG";
+        return "ChisesCraist BassMax KNOBS DIAG";
     }
 
     void prepareToPlay(double sampleRate, int) override;
@@ -31,10 +31,9 @@ public:
         juce::MidiBuffer&
     ) override;
 
-    juce::AudioProcessorEditor* createEditor() override
-    {
-        return new juce::GenericAudioProcessorEditor(*this);
-    }
+    juce::AudioProcessorEditor* createEditor() override;
+
+    juce::AudioProcessorValueTreeState& getParameters() noexcept { return state; }
 
     bool hasEditor() const override
     {

@@ -1,0 +1,12 @@
+CHISESCRAIST BASSMAX - PRUEBA DE PERILLAS
+
+Esta version mantiene intacto el motor de audio del diagnostico V1 que funciono en Ableton. Solo agrega un editor con 11 perillas enlazadas mediante SliderAttachment. No incluye exportacion MIDI ni nuevos estilos.
+
+1. Guarda el plugin diagnostico V1 funcional.
+2. Sube el contenido de este proyecto a una rama nueva de GitHub.
+3. Compila con Actions y descarga el artefacto VST3.
+4. Retira otras versiones de prueba de las carpetas escaneadas por Live.
+5. Abre un proyecto vacio, inserta KNOBS DIAG una vez y verifica que abre, gira las perillas y suena.
+6. Si Live se cierra, retira KNOBS DIAG y conserva el informe del cierre.
+
+El codigo fuente no ha sido compilado ni probado dentro de Ableton en este entorno.

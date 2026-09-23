@@ -1,5 +1,6 @@
 
 #include "PluginProcessor.h"
+#include "PluginEditor.h"
 
 #include <algorithm>
 #include <cmath>
@@ -375,4 +376,10 @@ void TechHouseBassLab::setStateInformation(
 juce::AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new TechHouseBassLab();
+}
+
+// The editor is intentionally isolated from the stable audio engine.
+juce::AudioProcessorEditor* TechHouseBassLab::createEditor()
+{
+    return new BassMaxKnobEditor(*this);
 }
