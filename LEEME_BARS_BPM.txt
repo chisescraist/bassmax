@@ -1,0 +1,8 @@
+CHISESCRAIST BASSMAX 1.5 - 4 / 8 / 16 BARS + BPM
+
+BASE: 1.4 DRAG MIDI que el usuario confirmo funcionando.
+BARS: 4, 8 o 16 compases de 4/4; generacion de 64, 128 o 256 semicorcheas con variaciones por compas.
+BPM: 60-200. Se graba como evento de tempo en el archivo MIDI exportado o arrastrado.
+IMPORTANTE: Ableton puede mantener el tempo global de su proyecto al importar el MIDI. Ajustar el BPM del proyecto para escuchar el tempo elegido. La reproduccion interna se sincroniza al BPM del host, no al valor de exportacion.
+PIANO ROLL: selector BAR para inspeccionar los compases uno por uno; DRAG y EXPORT contienen la frase completa.
+CONSERVAR el VST3 1.4 anterior. Compilar en GitHub Actions en rama nueva y probar primero en proyecto vacio.

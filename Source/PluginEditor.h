@@ -38,17 +38,18 @@ private:
     void timerCallback() override;
     TechHouseBassLab& processor;
     using Attachment = juce::AudioProcessorValueTreeState::SliderAttachment;
-    std::array<juce::Slider, 11> knobs;
-    std::array<juce::Label, 11> captions;
-    std::array<std::unique_ptr<Attachment>, 11> attachments;
+    std::array<juce::Slider, 12> knobs;
+    std::array<juce::Label, 12> captions;
+    std::array<std::unique_ptr<Attachment>, 12> attachments;
     juce::TextButton generateButton { "GENERATE BASS" };
     juce::TextButton exportButton { "EXPORT MIDI" };
     BassMaxDragMidiButton dragButton;
     juce::Label dragStatus;
     void startMidiDrag();
     juce::TextButton previewButton { "PREVIEW: ON" };
-    juce::ComboBox stepsChoice;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> stepsAttachment;
+    juce::ComboBox barsChoice;
+    juce::ComboBox pageChoice;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ComboBoxAttachment> barsAttachment;
     std::shared_ptr<juce::FileChooser> exportChooser;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(BassMaxKnobEditor)
 };

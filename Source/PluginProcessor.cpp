@@ -40,7 +40,8 @@ TechHouseBassLab::makeParams()
     f("swing", "Swing percent", 0, 70, 15);
     f("length", "Gate percent", 10, 95, 48);
     f("seed", "Generate: change seed", 0, 9999, 1);
-    f("steps", "Pattern length (16 or 32)", 16, 32, 16, 16);
+    f("bars", "Phrase length (4 / 8 / 16 bars)", 0, 2, 0);
+    f("bpm", "MIDI export tempo BPM", 60, 200, 126);
     f("variation", "Pitch variation percent", 0, 100, 35);
     f("gain", "Internal bass gain (0 = silent preview)", 0, 1, 0.22f, 0.01f);
     f("tone", "Internal bass tone", 0, 1, 0.35f, 0.01f);
@@ -102,17 +103,20 @@ void TechHouseBassLab::regenerate(int seed)
         0,0,0,7,0,0,3,0,0,0,7,0,0,3,0,0
     };
 
-    for (int i = 0; i < 32; ++i)
+    for (int i = 0; i < 256; ++i)
     {
+        // A recognizable groove motif with deterministic, bar-specific variations.
+        const int bar = i / 16;
         const bool base = bases[groove][i % 16];
+        const int barAccent = (bar % 4 == 3 ? 12 : (bar % 4 == 1 ? -5 : 0));
 
         gates[i] = base
-            ? random.nextInt(100) < std::min(100, density + 35)
-            : random.nextInt(100) < std::max(0, density - 55);
+            ? random.nextInt(100) < std::min(100, density + 35 + barAccent)
+            : random.nextInt(100) < std::max(0, density - 55 + barAccent);
 
         const int off =
             random.nextInt(100) < variation
-                ? offsets[i % 16]
+                ? offsets[(i + bar % 4) % 16]
                 : 0;
 
         pitches[i] = root + off;
@@ -241,7 +245,7 @@ void TechHouseBassLab::processBlock(
 
     const int length =
         static_cast<int>(
-            state.getRawParameterValue("steps")->load()
+            (64 << static_cast<int>(state.getRawParameterValue("bars")->load()))
         );
 
     // Audible internal preview remains available until external routing is verified.
@@ -411,6 +415,9 @@ bool TechHouseBassLab::exportMidi(const juce::File& file)
     constexpr int ticksPerQuarter = 960;
     constexpr double ticksPerStep = ticksPerQuarter / 4.0;
     juce::MidiMessageSequence sequence;
+    sequence.addEvent(juce::MidiMessage::tempoMetaEvent(
+        juce::roundToInt(60000000.0 / juce::jlimit(60.0, 200.0, snapshot.bpm))), 0.0);
+    sequence.addEvent(juce::MidiMessage::timeSignatureMetaEvent(4, 4), 0.0);
     for (int i = 0; i < steps; ++i)
     {
         if (!gateCopy[static_cast<size_t>(i)]) continue;
@@ -464,7 +471,9 @@ TechHouseBassLab::PatternSnapshot TechHouseBassLab::getPatternSnapshot()
         snapshot.gates = gates;
         snapshot.velocities = velocities;
     }
-    snapshot.steps = juce::jlimit(16, 32, static_cast<int>(state.getRawParameterValue("steps")->load()));
+    snapshot.bars = (4 << juce::jlimit(0, 2, static_cast<int>(state.getRawParameterValue("bars")->load())));
+    snapshot.steps = snapshot.bars * 16;
+    snapshot.bpm = state.getRawParameterValue("bpm")->load();
     snapshot.swing = state.getRawParameterValue("swing")->load() / 100.0;
     snapshot.gateLength = state.getRawParameterValue("length")->load() / 100.0;
     return snapshot;

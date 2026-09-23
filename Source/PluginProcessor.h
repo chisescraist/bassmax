@@ -13,7 +13,7 @@ public:
 
     const juce::String getName() const override
     {
-        return "ChisesCraist BassMax Drag MIDI 1.4";
+        return "ChisesCraist BassMax Bars BPM 1.5";
     }
 
     void prepareToPlay(double sampleRate, int) override;
@@ -38,10 +38,12 @@ public:
     bool exportMidi(const juce::File& file);
     struct PatternSnapshot
     {
-        std::array<int, 32> notes{};
-        std::array<bool, 32> gates{};
-        std::array<int, 32> velocities{};
-        int steps = 16;
+        std::array<int, 256> notes{};
+        std::array<bool, 256> gates{};
+        std::array<int, 256> velocities{};
+        int steps = 64;
+        int bars = 4;
+        double bpm = 126.0;
         double swing = 0.0;
         double gateLength = 0.5;
     };
@@ -119,9 +121,9 @@ public:
     bool isPreviewEnabled() const noexcept { return previewEnabled.load(); }
 private:
 
-    std::array<int, 32> pitches{};
-    std::array<bool, 32> gates{};
-    std::array<int, 32> velocities{};
+    std::array<int, 256> pitches{};
+    std::array<bool, 256> gates{};
+    std::array<int, 256> velocities{};
 
     juce::Random random;
 
