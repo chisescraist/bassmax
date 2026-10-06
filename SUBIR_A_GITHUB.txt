@@ -1,0 +1,12 @@
+Copiar TODO el contenido de esta carpeta a la raiz del repositorio Vox.
+
+Luego:
+git add -A
+git commit -m "CHISESCRAIST VOX build and release"
+git push origin main
+
+Cuando Actions quede verde, entrar en la pagina principal del repositorio > Releases.
+Descargar: CHISESCRAIST-VOX-Windows-VST3.zip
+
+Si Publish Release falla por permisos:
+Settings > Actions > General > Workflow permissions > Read and write permissions > Save.

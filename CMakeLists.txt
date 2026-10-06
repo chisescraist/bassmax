@@ -1,10 +1,46 @@
 cmake_minimum_required(VERSION 3.22)
-project(TechHouseBassLab VERSION 2.0.0 LANGUAGES CXX)
-include(FetchContent)
-FetchContent_Declare(JUCE GIT_REPOSITORY https://github.com/juce-framework/JUCE.git GIT_TAG 8.0.10 GIT_SHALLOW TRUE)
-FetchContent_MakeAvailable(JUCE)
-juce_add_plugin(TechHouseBassLab COMPANY_NAME "ChisesCraist" BUNDLE_ID "com.chisescraist.bassmax.bars15" PLUGIN_MANUFACTURER_CODE ChCr PLUGIN_CODE BmB5 FORMATS VST3 Standalone PRODUCT_NAME "ChisesCraist BassMax Response 2.0" IS_SYNTH TRUE NEEDS_MIDI_INPUT TRUE PRODUCES_MIDI_OUTPUT TRUE IS_MIDI_EFFECT FALSE EDITOR_WANTS_KEYBOARD_FOCUS FALSE COPY_PLUGIN_AFTER_BUILD FALSE)
-target_sources(TechHouseBassLab PRIVATE Source/PluginProcessor.cpp Source/PluginProcessor.h Source/PluginEditor.cpp Source/PluginEditor.h)
-target_compile_features(TechHouseBassLab PRIVATE cxx_std_17)
-target_compile_definitions(TechHouseBassLab PUBLIC JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0)
-target_link_libraries(TechHouseBassLab PRIVATE juce::juce_audio_utils juce::juce_dsp juce::juce_audio_processors juce::juce_gui_extra juce::juce_recommended_config_flags juce::juce_recommended_warning_flags)
+project(ChisescraistVOX VERSION 0.1.0)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+if (DEFINED JUCE_DIR)
+    add_subdirectory(${JUCE_DIR} JUCE)
+elseif (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/JUCE/CMakeLists.txt")
+    add_subdirectory(JUCE)
+else()
+    message(FATAL_ERROR "JUCE not found. Clone JUCE into ./JUCE or configure with -DJUCE_DIR=C:/path/to/JUCE")
+endif()
+
+juce_add_plugin(ChisescraistVOX
+    COMPANY_NAME "Chisescraist Audio"
+    BUNDLE_ID "audio.chisescraist.vox"
+    PLUGIN_MANUFACTURER_CODE Chis
+    PLUGIN_CODE Cvox
+    FORMATS VST3 Standalone
+    PRODUCT_NAME "CHISESCRAIST VOX"
+    DESCRIPTION "Real-time vocal performance FX for Tech House"
+    IS_SYNTH FALSE
+    NEEDS_MIDI_INPUT TRUE
+    NEEDS_MIDI_OUTPUT FALSE
+    IS_MIDI_EFFECT FALSE
+    COPY_PLUGIN_AFTER_BUILD FALSE
+)
+
+target_sources(ChisescraistVOX PRIVATE
+    Source/PluginProcessor.cpp Source/PluginProcessor.h
+    Source/PluginEditor.cpp Source/PluginEditor.h
+    Source/DSP/VoxEngine.cpp Source/DSP/VoxEngine.h
+    Source/DSP/DarkProcessor.h Source/DSP/RadioProcessor.h
+    Source/DSP/StutterProcessor.h Source/DSP/DelayProcessor.h
+    Source/DSP/ReverbProcessor.h Source/DSP/FilterProcessor.h
+    Source/UI/LookAndFeel.cpp Source/UI/LookAndFeel.h
+)
+
+target_compile_definitions(ChisescraistVOX PUBLIC
+    JUCE_WEB_BROWSER=0 JUCE_USE_CURL=0 JUCE_VST3_CAN_REPLACE_VST2=0)
+
+target_link_libraries(ChisescraistVOX PRIVATE
+    juce::juce_audio_utils juce::juce_dsp
+    PUBLIC juce::juce_recommended_config_flags
+           juce::juce_recommended_lto_flags
+           juce::juce_recommended_warning_flags)

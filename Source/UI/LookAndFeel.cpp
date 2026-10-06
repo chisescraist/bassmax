@@ -1,0 +1,3 @@
+#include "LookAndFeel.h"
+ChisescraistLookAndFeel::ChisescraistLookAndFeel(){setColour(juce::Slider::textBoxTextColourId,juce::Colours::white);setColour(juce::Slider::textBoxOutlineColourId,juce::Colours::transparentBlack);}
+void ChisescraistLookAndFeel::drawRotarySlider(juce::Graphics&g,int x,int y,int w,int h,float p,float a0,float a1,juce::Slider&){auto b=juce::Rectangle<float>((float)x,(float)y,(float)w,(float)h).reduced(12);float r=juce::jmin(b.getWidth(),b.getHeight())*.5f;auto c=b.getCentre();float a=a0+p*(a1-a0);g.setColour(juce::Colour(0xff252525));g.fillEllipse(b);g.setColour(juce::Colours::white);juce::Path q;q.addRoundedRectangle(-2,-r+7,4,r*.48f,2);g.fillPath(q,juce::AffineTransform::rotation(a).translated(c.x,c.y));}
