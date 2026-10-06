@@ -1,20 +1,15 @@
-CHISESCRAIST VOX - FIX DEL WORKFLOW EXISTENTE
+REEMPLAZO EXACTO DEL WORKFLOW REAL
 
-Archivo a reemplazar en GitHub:
+Reemplazar:
 .github/workflows/cmake-multi-platform.yml
 
-IMPORTANTE:
-Este paquete NO crea otro workflow con otro nombre.
-Reemplaza exactamente cmake-multi-platform.yml.
+por el archivo incluido en este ZIP.
 
-Qué hace:
-1. Checkout del repositorio.
-2. Clona JUCE en ./JUCE.
-3. Verifica JUCE/CMakeLists.txt.
-4. Ejecuta CMake pasando -DJUCE_DIR explícitamente.
-5. Compila el target ChisescraistVOX_VST3.
-6. Busca el .vst3 generado.
-7. Lo sube como artifact llamado CHISESCRAIST-VOX-Windows-VST3.
+Correcciones respecto del workflow BassMax que estaba en GitHub:
+- Descarga JUCE antes de ejecutar CMake.
+- Verifica JUCE/CMakeLists.txt.
+- Pasa JUCE_DIR explicitamente.
+- Cambia TechHouseBassLab_VST3 por ChisescraistVOX_VST3.
+- Cambia el artifact de BassMax a CHISESCRAIST-VOX-Windows-VST3.
 
-Si el siguiente error aparece en el paso Build CHISESCRAIST VOX VST3,
-entonces JUCE/CMake ya quedó resuelto y el error será de compilación del código.
+NO modifica el DSP ni el codigo del plugin.
